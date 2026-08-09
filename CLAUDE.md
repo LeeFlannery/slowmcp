@@ -12,12 +12,48 @@ them win on specifics. `ARCHITECTURE.md` was reconciled against the ecosystem
 on 9 August 2026; the findings record what was actually verified against the
 installed packages, including the places where the architecture was wrong.
 
+## CRITICAL ARCHITECTURAL INVARIANTS
+
+SlowMCP is intentionally implemented in CoffeeScript.
+
+This is a product requirement, not an implementation accident.
+
+- All SlowMCP runtime implementation source under `packages/slowmcp/src/` MUST
+  remain `.coffee`.
+- NEVER rewrite, migrate, translate, or replace CoffeeScript implementation code
+  with TypeScript or JavaScript.
+- NEVER propose TypeScript as a simplification, modernization, cleanup, or
+  maintainability improvement.
+- TypeScript is for consumer-facing declarations, tests, fixtures, reference
+  implementations, and documentation examples only.
+- Compiled JavaScript under `dist/` is generated output and must never become
+  source of truth.
+- CoffeeScript containment is an intentional package boundary: CoffeeScript is
+  used to implement SlowMCP but is not required by consumers.
+- Any refactor that changes the implementation language violates the
+  architecture even if runtime behavior remains equivalent.
+
+When simplifying code, simplify the CoffeeScript as CoffeeScript.
+
+## Simplification rules
+
+When using `/simplify` or performing cleanup:
+
+- Preserve public API behavior.
+- Preserve CoffeeScript as the implementation language.
+- Prefer deleting unnecessary abstractions over introducing new ones.
+- Do not replace handwritten `.d.ts` contracts with a TypeScript implementation.
+- Do not collapse the protocol/type/package contract tests into internal tests.
+- Do not remove apparently redundant checks when they enforce an external
+  contract.
+- Do not weaken protocol-version assertions.
+- Do not normalize away observable differences between SlowMCP, FastMCP, and the
+  official SDK.
+
 ## Non-negotiables
 
 - SlowMCP wraps the official MCP TypeScript SDK. Never implement protocol wire
   behavior, version negotiation, or a custom codec.
-- Shipped runtime source is CoffeeScript (`.coffee`). Do not rewrite it in
-  TypeScript.
 - Tests, fixtures, examples, and docs may use TypeScript/JavaScript.
 - Consumer projects must never require CoffeeScript at runtime.
 - Treat protocol, TypeScript, and packed-package behavior as three separate
