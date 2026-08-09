@@ -1,0 +1,31 @@
+{
+  "name": "slowmcp",
+  "version": "0.0.0-bootstrap.0",
+  "private": true,
+  "description": "Blazingly adequate. A framework for building, testing, and shipping MCP servers.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "types"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build-coffee.mjs",
+    "clean": "node -e \"import('node:fs').then(fs => fs.rmSync('dist', { recursive: true, force: true }))\"",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "devDependencies": {
+    "coffeescript": "2.7.0"
+  }
+}

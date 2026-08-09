@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+
+# Package artifacts
+*.tgz
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Local agent / scratch files
+.local/
+.local/**
+
+# Temporary files
+tmp/
+temp/
+.cache/
+*.tmp
+
+# Astro / docs
+.astro/
+docs/dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# CoffeeScript generated artifacts
+*.coffee.js
+*.coffee.js.map
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
