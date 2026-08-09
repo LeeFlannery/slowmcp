@@ -25,20 +25,35 @@ const declaredNames = (file) => {
   )
 }
 
+// `./package.json` is a raw file passthrough with no surface of its own; every
+// other entry is a public subpath and must be fully declared. An entry missing
+// `types` or a runtime target is a failure, never a skip: silently passing over
+// it is exactly how an undeclared subpath would ship.
 const subpaths = Object.entries(manifest.exports)
-  .filter(([, target]) => typeof target === 'object' && target.types)
+  .filter(([subpath]) => subpath !== './package.json')
   .map(([subpath, target]) => ({
     specifier: subpath === '.' ? manifest.name : `${manifest.name}${subpath.slice(1)}`,
-    runtime: target.import ?? target.default,
-    types: target.types
+    runtime: typeof target === 'object' ? (target.import ?? target.default) : undefined,
+    types: typeof target === 'object' ? target.types : undefined
   }))
 
+const problems = []
+
 if (subpaths.length === 0) {
-  console.error('no subpaths with declarations found in the export map')
+  problems.push('no public subpaths found in the export map')
+}
+
+for (const { specifier, runtime, types } of subpaths) {
+  if (!types) problems.push(`${specifier}: export map entry has no \`types\` condition`)
+  if (!runtime) problems.push(`${specifier}: export map entry has no import/default target`)
+}
+
+if (problems.length > 0) {
+  console.error('export map incomplete:')
+  for (const problem of problems) console.error(`  - ${problem}`)
   process.exit(1)
 }
 
-const problems = []
 const report = []
 
 for (const { specifier, runtime, types } of subpaths) {

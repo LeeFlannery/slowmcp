@@ -8,12 +8,15 @@
 // check passes.
 
 import { execFileSync } from 'node:child_process'
-import { cpSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '../..')
+const packageManifest = JSON.parse(
+  readFileSync(join(resolve(fileURLToPath(import.meta.url), '../..'), 'packages/slowmcp/package.json'), 'utf8')
+)
 const packageDir = join(repoRoot, 'packages', 'slowmcp')
 const fixtureDir = join(repoRoot, 'fixtures', 'packed-consumer')
 const exampleDir = join(repoRoot, 'examples', 'hello-tool')
@@ -69,10 +72,13 @@ try {
         private: true,
         version: '0.0.0',
         type: 'module',
+        // The SDK pin is read from the package under test, so the consumer
+        // always exercises the client/server pair that actually ships rather
+        // than a version frozen into this script.
         dependencies: {
           slowmcp: `file:${tarball}`,
-          zod: '4.4.3',
-          '@modelcontextprotocol/client': '2.0.0'
+          zod: packageManifest.devDependencies.zod,
+          '@modelcontextprotocol/client': packageManifest.dependencies['@modelcontextprotocol/client']
         },
         devDependencies: { '@types/node': '26.2.0', typescript: '7.0.2' }
       },

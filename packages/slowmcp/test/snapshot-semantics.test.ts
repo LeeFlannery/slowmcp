@@ -14,6 +14,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 const { createServer, text } = await import(join(dist, 'index.js'))
 const { createHttpHandler } = await import(join(dist, 'http.js'))
+const { testServer } = await import(join(dist, 'testing.js'))
 const { protocolPolicy } = await import(join(dist, 'protocol.js'))
 
 const open: Array<{ close: () => Promise<void> }> = []
@@ -82,6 +83,30 @@ describe('createHttpHandler snapshot semantics', () => {
     expect(await discover(handler)).toEqual(['a'])
     app.tool({ name: 'b', handler: () => text('b') })
     expect(await discover(handler)).toEqual(['a'])
+  })
+
+  it('applies to testServer, which snapshots at construction not at connect', async () => {
+    // testServer builds its handler eagerly, so it inherits the same
+    // semantics. Connecting is lazy; snapshotting is not, and the gap between
+    // the two is where this would surprise someone.
+    const app = createServer({ name: 'snapshot', version: '1.0.0' })
+    app.tool({ name: 'a', handler: () => text('a') })
+
+    const mcp = testServer(app)
+    app.tool({ name: 'b', handler: () => text('b') })
+
+    try {
+      expect((await mcp.tools()).map((tool: { name: string }) => tool.name)).toEqual(['a'])
+    } finally {
+      await mcp.close()
+    }
+
+    const later = testServer(app)
+    try {
+      expect((await later.tools()).map((tool: { name: string }) => tool.name)).toEqual(['a', 'b'])
+    } finally {
+      await later.close()
+    }
   })
 
   it('exposes the same guarantee through app.snapshot()', () => {

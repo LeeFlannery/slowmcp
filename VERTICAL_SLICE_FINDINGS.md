@@ -112,14 +112,20 @@ For context, from `BASELINE_FINDINGS.md`, measured the same way:
 
 | gate | count |
 |---|---:|
-| Tests (`pnpm test`) | 56 |
+| Tests (`pnpm test`) | 57 |
 | `slowmcp check` named checks | 7 |
 | Public subpaths proven from the tarball | 4 |
 | Negative type fixtures (`@ts-expect-error`) | 20 |
 
-Both drift guards were confirmed to fail when deliberately broken: an
-unnecessary `@ts-expect-error` fails with TS2578, and an extra runtime export
-fails the `package` check with `exported but undeclared`.
+Every guard has been confirmed to fail when deliberately broken, which is the
+only evidence that a guard is worth having:
+
+| guard | broken by | fails with |
+|---|---|---|
+| negative type fixtures | an unnecessary `@ts-expect-error` | TS2578 |
+| export surface | an extra runtime export | `exported but undeclared` |
+| export map completeness | a subpath with no `types` condition | `export map incomplete` |
+| version sync | editing `package.json` version alone | build failure |
 
 ## 7. What these numbers are for
 

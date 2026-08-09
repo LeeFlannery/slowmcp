@@ -24,6 +24,12 @@ export interface CallResult {
  * Application test harness backed by a real official MCP Client over the
  * official Streamable HTTP client transport.
  *
+ * **The capability snapshot is taken at `testServer(app)`, not at first
+ * connect.** The harness builds its handler immediately, so it inherits the
+ * snapshot semantics of `createHttpHandler`: a tool registered on `app` after
+ * this call is not visible to this harness, even though nothing has connected
+ * yet. Register everything before calling `testServer`, or make a new one.
+ *
  * **Connection is lazy, and every accessor is a method.** `client()` and
  * `protocolVersion()` are deliberately not properties: the connection does not
  * exist until something needs it, so a property would have to either connect

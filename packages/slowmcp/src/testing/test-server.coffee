@@ -22,6 +22,9 @@ export testServer = (app, options = {}) ->
   unless app? and typeof app.snapshot is 'function'
     throw new SlowMcpError 'testServer(app) requires a SlowMCP server', 'SLOWMCP_INVALID_APP'
 
+  # Built eagerly, so the capability snapshot is taken here rather than at
+  # first connect. Connecting is lazy; snapshotting is not. Both halves are
+  # part of the documented contract in types/testing.d.ts.
   handler = createHttpHandler app
   clientInfo = options.client ? { name: 'slowmcp-test-client', version: '0.0.0' }
 

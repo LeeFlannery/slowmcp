@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { createRequire } from 'node:module'
+import { pathToFileURL } from 'node:url'
 
 // Resolve from the invoking package, not from this script's location, so the
 // compiler comes from the package that declares it as a devDependency.
@@ -32,11 +33,25 @@ function walk(dir) {
   return out
 }
 
+// The `version` export is hand-written in index.coffee and can silently drift
+// from the manifest, which every other guard misses: they compare export
+// *names*, never values.
+const manifestVersion = JSON.parse(readFileSync('package.json', 'utf8')).version
+const declaredVersion = (await import(`${pathToFileURL(resolve(DIST, 'index.js')).href}?v=${Date.now()}`))
+  .version
+
 const files = walk(DIST)
 const jsFiles = files.filter((f) => f.endsWith('.js'))
 const problems = []
 
 if (jsFiles.length === 0) problems.push('no .js emitted into dist/')
+
+if (declaredVersion !== manifestVersion) {
+  problems.push(
+    `version export is '${declaredVersion}' but package.json is '${manifestVersion}' ` +
+      '(update src/index.coffee)'
+  )
+}
 
 for (const js of jsFiles) {
   const body = readFileSync(js, 'utf8')
