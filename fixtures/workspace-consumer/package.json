@@ -1,0 +1,11 @@
+{
+  "name": "@slowmcp-fixtures/workspace-consumer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Resolves slowmcp through its real export map, as a linked dependency rather than by file path.",
+  "dependencies": {
+    "slowmcp": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

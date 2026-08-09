@@ -25,7 +25,7 @@ afterEach(async () => {
 /** Discovers tool names through the official client, against a given handler. */
 const discover = async (handler: { fetch: (request: Request) => Promise<Response> }) => {
   const transport = new StreamableHTTPClientTransport(new URL('http://slowmcp.test/mcp'), {
-    fetch: (input: RequestInfo, init: RequestInit) => handler.fetch(new Request(input, init))
+    fetch: (url: string | URL, init?: RequestInit) => handler.fetch(new Request(url, init))
   })
   const client = new Client(
     { name: 'snapshot-test', version: '0.0.0' },

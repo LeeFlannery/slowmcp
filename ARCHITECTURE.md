@@ -32,9 +32,11 @@ that contradicts them. Detail lives in `BOOTSTRAP_FINDINGS.md`,
   definitions-first model in §3 fits the SDK without adaptation.
 - `StreamableHTTPClientTransportOptions.fetch` accepts an in-process handler,
   so the official client transport drives a handler with no socket.
-- Root package consumption is proven end to end: build, `pnpm pack`, install
-  into a clean external project, run JS and TS consumers, no CoffeeScript
-  present or resolvable.
+- Package consumption is proven end to end: build, `pnpm pack`, install into a
+  clean external project, run JS and TS consumers, no CoffeeScript present or
+  resolvable. Every public subpath is enumerated from the packed export map and
+  resolved in three independent contexts: by file path in the workspace, as a
+  linked workspace dependency, and from the tarball.
 
 **Constraints that follow.**
 
@@ -54,7 +56,6 @@ that contradicts them. Detail lives in `BOOTSTRAP_FINDINGS.md`,
 
 **Still unproven.**
 
-- Subpath exports. Only the root export has been packed and consumed.
 - stdio, in every respect: stdout protocol integrity, process lifecycle,
   signals, packaged path resolution.
 - The declared Node floor of `>=20.19.0`, which has been exercised only on 26.x.

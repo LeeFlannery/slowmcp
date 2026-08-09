@@ -112,9 +112,10 @@ For context, from `BASELINE_FINDINGS.md`, measured the same way:
 
 | gate | count |
 |---|---:|
-| Tests (`pnpm test`) | 57 |
+| Tests (`pnpm test`) | 72 |
 | `slowmcp check` named checks | 7 |
-| Public subpaths proven from the tarball | 4 |
+| Public subpaths proven from the tarball | 4, enumerated from the packed export map |
+| Independent resolution contexts | 3 (workspace path, workspace link, packed tarball) |
 | Negative type fixtures (`@ts-expect-error`) | 20 |
 
 Every guard has been confirmed to fail when deliberately broken, which is the

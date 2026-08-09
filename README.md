@@ -78,8 +78,11 @@ Details: [`docs/bootstrap-2026-08.md`](docs/bootstrap-2026-08.md).
 
 ## Ship it
 
+The release check runs from the repository today. It is not published as a
+`slowmcp` executable yet, so there is no `slowmcp check` on your PATH.
+
 ```sh
-slowmcp check
+pnpm slowmcp:check
 ```
 
 ```text
@@ -99,9 +102,11 @@ Blazingly adequate.
 ```
 
 It packs the package, installs the tarball into a clean project, and verifies
-it from the outside: every public subpath, protocol negotiation, discovery,
-invocation, snapshot semantics, the shipped TypeScript declarations, and the
-absence of CoffeeScript.
+it from the outside: every public subpath enumerated from the packed export
+map, protocol negotiation, discovery, invocation, snapshot semantics, the
+shipped TypeScript declarations, and the absence of CoffeeScript.
+
+Shipping it as a real `slowmcp check` binary is roadmap work, not done.
 
 ## Public API
 
@@ -136,7 +141,7 @@ requests.
 - Tools, resources, and prompts
 - stdio and Streamable HTTP
 - Protocol-backed test harness
-- `slowmcp check`
+- `slowmcp check` as an installable command
 - Reference implementations
 - GitHub Pages documentation
 - **TypeScript support: never.**

@@ -27,6 +27,15 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
+  fixtures/workspace-consumer:
+    dependencies:
+      slowmcp:
+        specifier: workspace:*
+        version: link:../../packages/slowmcp
+      zod:
+        specifier: 4.4.3
+        version: 4.4.3
+
   packages/slowmcp:
     dependencies:
       '@modelcontextprotocol/client':

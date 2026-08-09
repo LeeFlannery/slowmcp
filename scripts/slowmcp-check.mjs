@@ -14,9 +14,11 @@ import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(fileURLToPath(import.meta.url), '../..')
-const packageManifest = JSON.parse(
-  readFileSync(join(resolve(fileURLToPath(import.meta.url), '../..'), 'packages/slowmcp/package.json'), 'utf8')
-)
+const readManifest = (relative) =>
+  JSON.parse(readFileSync(join(resolve(fileURLToPath(import.meta.url), '../..'), relative), 'utf8'))
+
+const packageManifest = readManifest('packages/slowmcp/package.json')
+const rootManifest = readManifest('package.json')
 const packageDir = join(repoRoot, 'packages', 'slowmcp')
 const fixtureDir = join(repoRoot, 'fixtures', 'packed-consumer')
 const exampleDir = join(repoRoot, 'examples', 'hello-tool')
@@ -80,7 +82,12 @@ try {
           zod: packageManifest.devDependencies.zod,
           '@modelcontextprotocol/client': packageManifest.dependencies['@modelcontextprotocol/client']
         },
-        devDependencies: { '@types/node': '26.2.0', typescript: '7.0.2' }
+        // Toolchain pins come from the repository, so the declarations are
+        // always checked with the compiler this repository actually uses.
+        devDependencies: {
+          '@types/node': rootManifest.devDependencies['@types/node'],
+          typescript: rootManifest.devDependencies.typescript
+        }
       },
       null,
       2

@@ -8,13 +8,14 @@
   },
   "scripts": {
     "build": "pnpm --filter slowmcp build",
-    "test": "vitest run",
-    "typecheck": "pnpm --filter slowmcp typecheck && tsc --project spikes/tsconfig.json",
+    "test": "pnpm build && vitest run",
+    "typecheck": "pnpm --filter slowmcp typecheck && tsc --project packages/slowmcp/tsconfig.test.json && tsc --project fixtures/workspace-consumer/tsconfig.json && tsc --project spikes/tsconfig.json",
     "spike:mcp": "node --experimental-strip-types spikes/src/raw-sdk-spike.ts",
     "spike:baseline": "node --experimental-strip-types spikes/src/baseline-spike.ts",
     "slowmcp:check": "node scripts/slowmcp-check.mjs",
     "eval:export-surface": "node scripts/verify-export-surface.mjs packages/slowmcp",
-    "ref:hello": "pnpm --filter @slowmcp-examples/hello-tool verify"
+    "ref:hello": "pnpm --filter @slowmcp-examples/hello-tool verify",
+    "test:only": "vitest run"
   },
   "devDependencies": {
     "@types/node": "26.2.0",

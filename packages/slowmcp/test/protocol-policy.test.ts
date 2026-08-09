@@ -75,6 +75,66 @@ describe('testServer negotiation', () => {
       await mcp.close()
     }
   })
+
+  // Without this, nothing proves testServer is wired to the policy at all.
+  // Deleting the assertProtocolPolicy call from test-server.coffee leaves every
+  // other test in the repository green, because negotiation genuinely succeeds
+  // and no other test ever presents a session that violates the policy.
+  //
+  // `protocolVersion` is a configurable prototype getter on the official
+  // transport, so a real connection can be made to report an unacceptable
+  // revision without stubbing SlowMCP itself.
+  describe('when the session negotiated an unacceptable revision', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      StreamableHTTPClientTransport.prototype,
+      'protocolVersion'
+    )!
+
+    const forceRevision = (revision: string) =>
+      Object.defineProperty(StreamableHTTPClientTransport.prototype, 'protocolVersion', {
+        configurable: true,
+        get: () => revision
+      })
+
+    afterEach(() => {
+      Object.defineProperty(StreamableHTTPClientTransport.prototype, 'protocolVersion', descriptor)
+    })
+
+    it('refuses the connection instead of handing it back', async () => {
+      forceRevision(SDK_DEFAULT_REVISION)
+      const mcp = testServer(greeter())
+      try {
+        await expect(mcp.protocolVersion()).rejects.toThrow(SlowMcpError)
+        await expect(mcp.protocolVersion()).rejects.toThrow(
+          /testServer negotiated MCP protocol 2025-11-25/
+        )
+      } finally {
+        await mcp.close()
+      }
+    })
+
+    it('refuses every operation, not just the version accessor', async () => {
+      forceRevision(SDK_DEFAULT_REVISION)
+      const mcp = testServer(greeter())
+      try {
+        await expect(mcp.tools()).rejects.toThrow(/compatibility policy/)
+        await expect(mcp.call('greet', { name: 'Lee' })).rejects.toThrow(/compatibility policy/)
+        await expect(mcp.client()).rejects.toThrow(/compatibility policy/)
+      } finally {
+        await mcp.close()
+      }
+    })
+
+    it('refuses an unknown future revision too, not just the known-bad one', async () => {
+      forceRevision('2099-01-01')
+      const mcp = testServer(greeter())
+      try {
+        await expect(mcp.tools()).rejects.toThrow(/negotiated MCP protocol 2099-01-01/)
+      } finally {
+        await mcp.close()
+      }
+    })
+  })
 })
 
 describe('regression: relying on the SDK default', () => {
@@ -83,7 +143,7 @@ describe('regression: relying on the SDK default', () => {
     openHandlers.push(handler)
 
     const transport = new StreamableHTTPClientTransport(new URL('http://slowmcp.test/mcp'), {
-      fetch: (input: RequestInfo, init: RequestInit) => handler.fetch(new Request(input, init))
+      fetch: (url: string | URL, init?: RequestInit) => handler.fetch(new Request(url, init))
     })
 
     // Constructed the obvious way: no versionNegotiation option at all.

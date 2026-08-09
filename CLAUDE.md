@@ -85,7 +85,7 @@ When using `/simplify` or performing cleanup:
 packages/slowmcp/   the one published package
 examples/           executable references, each self-verifying
 spikes/             bootstrap proofs: raw official SDK and FastMCP baselines
-fixtures/           hostile, minimal consumers of the packed tarball
+fixtures/           hostile consumers: packed tarball, and workspace resolution
 scripts/            build and verification entry points
 ```
 
@@ -94,9 +94,11 @@ scripts/            build and verification entry points
 ```sh
 pnpm install
 pnpm build            # .coffee -> dist/ ESM + source maps, with invariant checks
-pnpm test             # vitest: artifact + protocol contract suites
-pnpm typecheck        # declaration surface and spike sources
+pnpm test             # builds first, then vitest; refuses to run on a stale dist
+pnpm test:only        # vitest without rebuilding (still refuses if dist is stale)
+pnpm typecheck        # declarations, package tests, fixtures, spikes
 pnpm slowmcp:check    # release contract: pack, clean consumer, seven checks
+                      # (there is no `slowmcp` binary yet; this is the command)
 pnpm ref:hello        # examples/hello-tool, self-verifying
 pnpm eval:export-surface  # runtime exports vs declared exports, both directions
 pnpm spike:mcp        # raw official-SDK greet server over Streamable HTTP

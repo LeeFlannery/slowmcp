@@ -4,7 +4,8 @@
 // Run from the package directory (pnpm --filter slowmcp build).
 
 import { execFileSync } from 'node:child_process'
-import { readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { pathToFileURL } from 'node:url'
@@ -16,6 +17,26 @@ const coffeeBin = require.resolve('coffeescript/bin/coffee')
 
 const SRC = 'src'
 const DIST = 'dist'
+const BUILD_MANIFEST = '.build-manifest.json'
+
+/** Content hash of every CoffeeScript source, order-independent. */
+const hashSources = (root = SRC) => {
+  const walkSources = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? walkSources(join(dir, entry.name))
+        : entry.name.endsWith('.coffee')
+          ? [join(dir, entry.name)]
+          : []
+    )
+
+  const hash = createHash('sha256')
+  for (const file of walkSources(root).sort()) {
+    hash.update(file)
+    hash.update(readFileSync(file))
+  }
+  return hash.digest('hex')
+}
 
 rmSync(DIST, { recursive: true, force: true })
 
@@ -82,5 +103,13 @@ if (problems.length > 0) {
   for (const p of problems) console.error(`  - ${p}`)
   process.exit(1)
 }
+
+// Record what this build was made from. The test run refuses to start when the
+// sources on disk no longer hash to this, so no suite can report green against
+// output built from different code.
+writeFileSync(
+  BUILD_MANIFEST,
+  `${JSON.stringify({ sourceHash: hashSources(), modules: jsFiles.length }, null, 2)}\n`
+)
 
 console.log(`built ${jsFiles.length} module(s) to ${DIST}/ with source maps`)

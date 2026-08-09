@@ -22,25 +22,35 @@ async function check(name, fn) {
   }
 }
 
-/** Every public subpath, and the value exports each one promises. */
-const SUBPATHS = {
+/**
+ * What each public subpath must export.
+ *
+ * This list is independent on purpose. The subpaths themselves are enumerated
+ * from the packed export map below, so a new subpath cannot ship unnoticed;
+ * what each one exports is asserted from here, so a rename that updates the
+ * sources and the declarations together still fails.
+ */
+const EXPECTED_SURFACE = {
   slowmcp: ['SlowMcpError', 'createServer', 'text', 'version'],
   'slowmcp/http': ['createHttpHandler'],
   'slowmcp/testing': ['testServer'],
   'slowmcp/protocol': ['assertProtocolPolicy', 'protocolPolicy', 'satisfiesProtocolPolicy']
 }
 
-const DECLARATION_FILES = {
-  slowmcp: 'index.d.ts',
-  'slowmcp/http': 'http.d.ts',
-  'slowmcp/testing': 'testing.d.ts',
-  'slowmcp/protocol': 'protocol.d.ts'
-}
+/** Public subpaths, read from the tarball's own export map. */
+const advertisedSubpaths = (manifest) =>
+  Object.entries(manifest.exports)
+    .filter(([subpath]) => subpath !== './package.json')
+    .map(([subpath, target]) => ({
+      specifier: subpath === '.' ? 'slowmcp' : `slowmcp${subpath.slice(1)}`,
+      types: typeof target === 'object' ? target.types : undefined,
+      runtime: typeof target === 'object' ? (target.import ?? target.default) : undefined
+    }))
 
-const declaredIn = (pkgRoot, file) =>
+const declaredIn = (pkgRoot, typesPath) =>
   new Set(
     [
-      ...readFileSync(join(pkgRoot, 'types', file), 'utf8').matchAll(
+      ...readFileSync(join(pkgRoot, typesPath), 'utf8').matchAll(
         /^export declare (?:const|function|class|let|var)\s+([A-Za-z_$][\w$]*)/gm
       )
     ].map((match) => match[1])
@@ -52,13 +62,31 @@ await check('package', async () => {
   const pkgRoot = dirname(require.resolve('slowmcp/package.json'))
   assert.ok(pkgRoot.includes('node_modules'), `resolved outside node_modules: ${pkgRoot}`)
 
-  for (const [specifier, expected] of Object.entries(SUBPATHS)) {
+  const manifest = require('slowmcp/package.json')
+  const subpaths = advertisedSubpaths(manifest)
+
+  // Enumerated from the shipped map: a subpath added without a stated surface
+  // fails here rather than shipping unexercised.
+  assert.deepEqual(
+    subpaths.map((entry) => entry.specifier).sort(),
+    Object.keys(EXPECTED_SURFACE).sort(),
+    'the packed export map and the expected surface list disagree'
+  )
+
+  for (const { specifier, types, runtime: runtimeTarget } of subpaths) {
+    assert.ok(types, `${specifier}: export map entry has no \`types\` condition`)
+    assert.ok(runtimeTarget, `${specifier}: export map entry has no import/default target`)
+
     // Resolves through the export map, from the tarball, not workspace source.
     const loaded = await import(specifier)
     const runtime = new Set(Object.keys(loaded))
-    assert.deepEqual([...runtime].sort(), [...expected].sort(), `${specifier} runtime exports`)
+    assert.deepEqual(
+      [...runtime].sort(),
+      [...EXPECTED_SURFACE[specifier]].sort(),
+      `${specifier} runtime exports`
+    )
 
-    const declared = declaredIn(pkgRoot, DECLARATION_FILES[specifier])
+    const declared = declaredIn(pkgRoot, types)
     const undeclared = [...runtime].filter((n) => !declared.has(n)).sort()
     const missing = [...declared].filter((n) => !runtime.has(n)).sort()
     assert.deepEqual(undeclared, [], `${specifier}: exported but undeclared: ${undeclared.join(', ')}`)
@@ -74,8 +102,8 @@ await check('package', async () => {
   const map = JSON.parse(readFileSync(join(pkgRoot, 'dist', 'index.js.map'), 'utf8'))
   assert.ok(map.sourcesContent?.[0]?.length > 0, 'source map has no sourcesContent')
 
-  const count = Object.values(SUBPATHS).flat().length
-  return `${Object.keys(SUBPATHS).length} subpaths, ${count} exports, declarations agree`
+  const count = Object.values(EXPECTED_SURFACE).flat().length
+  return `${subpaths.length} subpaths from the packed export map, ${count} exports, declarations agree`
 })
 
 await check('protocol', async () => {
