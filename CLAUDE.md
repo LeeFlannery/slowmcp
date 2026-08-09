@@ -47,6 +47,7 @@ installed packages, including the places where the architecture was wrong.
 
 ```text
 packages/slowmcp/   the one published package
+examples/           executable references, each self-verifying
 spikes/             bootstrap proofs: raw official SDK and FastMCP baselines
 fixtures/           hostile, minimal consumers of the packed tarball
 scripts/            build and verification entry points
@@ -59,7 +60,16 @@ pnpm install
 pnpm build            # .coffee -> dist/ ESM + source maps, with invariant checks
 pnpm test             # vitest: artifact + protocol contract suites
 pnpm typecheck        # declaration surface and spike sources
-pnpm eval:artifact    # pack, install into a clean external project, verify
+pnpm slowmcp:check    # release contract: pack, clean consumer, six checks
+pnpm ref:hello        # examples/hello-tool, self-verifying
+pnpm eval:export-surface  # runtime exports vs declared exports, both directions
 pnpm spike:mcp        # raw official-SDK greet server over Streamable HTTP
 pnpm spike:baseline   # official SDK vs FastMCP, same official-client assertions
 ```
+
+## Protocol policy
+
+`packages/slowmcp/src/protocol/compatibility.coffee` is the single place
+SlowMCP states what protocol it speaks. Changing it changes what SlowMCP
+claims to support, and that must be a visible diff. Never derive protocol
+expectations from SDK version constants.

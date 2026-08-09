@@ -1,0 +1,14 @@
+{
+  "name": "@slowmcp-examples/hello-tool",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Smallest possible SlowMCP server, with a self-verifying official-client check.",
+  "scripts": {
+    "verify": "node verify.mjs"
+  },
+  "dependencies": {
+    "slowmcp": "workspace:*",
+    "zod": "4.4.3"
+  }
+}

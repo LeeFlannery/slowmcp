@@ -8,6 +8,64 @@
 **Protocol target:** MCP 2026-07-28 via the official TypeScript SDK v2
 **Tagline:** **Blazingly adequate.**
 
+## 0. Established by bootstrap
+
+Phase 0 (T00-T03) has run. The facts below were verified against installed
+packages rather than assumed, and they outrank anything later in this document
+that contradicts them. Detail lives in `BOOTSTRAP_FINDINGS.md`,
+`BASELINE_FINDINGS.md`, and `docs/bootstrap-2026-08.md`.
+
+**Proven.**
+
+- CoffeeScript 2.7.0 compiles the required ESM shape. `export` statements pass
+  through, the IIFE wrapper is suppressed automatically, no `--bare` is needed,
+  and no helper preamble is emitted.
+- Source maps embed `sourcesContent`. Stack traces resolve to CoffeeScript line
+  and column, and Node prints the real `.coffee` code frame, from a package
+  that ships no `.coffee` files. Source-map fidelity and CoffeeScript
+  containment are not in tension.
+- The official MCP v2 SDK is the `@modelcontextprotocol/server` /
+  `@modelcontextprotocol/client` / `@modelcontextprotocol/core` package split.
+  `@modelcontextprotocol/sdk` is the v1 line and is not what this document
+  targets.
+- `createMcpHandler(factory)` builds a fresh server per exchange, so the
+  definitions-first model in §3 fits the SDK without adaptation.
+- `StreamableHTTPClientTransportOptions.fetch` accepts an in-process handler,
+  so the official client transport drives a handler with no socket.
+- Root package consumption is proven end to end: build, `pnpm pack`, install
+  into a clean external project, run JS and TS consumers, no CoffeeScript
+  present or resolvable.
+
+**Constraints that follow.**
+
+- Modern protocol behavior must never be inferred from
+  `LATEST_PROTOCOL_VERSION` or `SUPPORTED_PROTOCOL_VERSIONS`. Both omit
+  2026-07-28, because the modern era is a separate axis reached through the
+  discovery probe.
+- The application test harness must explicitly select the intended negotiation
+  behavior, capture the revision actually negotiated, assert it against
+  SlowMCP's own compatibility policy, expose it to tests and diagnostics, and
+  fail loudly outside that policy. The client's default is `'legacy'`, and the
+  failure mode is silent.
+- FastMCP advertises `additionalProperties: false` for the equivalent Zod tool
+  where the raw SDK omits the key. This is observable comparison data. Preserve
+  it; do not normalize it away, and do not treat matching another framework's
+  advertised schema as a goal.
+
+**Still unproven.**
+
+- Subpath exports. Only the root export has been packed and consumed.
+- stdio, in every respect: stdout protocol integrity, process lifecycle,
+  signals, packaged path resolution.
+- The declared Node floor of `>=20.19.0`, which has been exercised only on 26.x.
+
+**Primary standing risk.**
+
+- TypeScript declaration/runtime drift. CoffeeScript emits no declarations, so
+  `types/*.d.ts` is a handwritten public specification that can diverge from
+  runtime exports with no build error. External contract fixtures compiled
+  against the packed tarball are the only thing holding the two together.
+
 ## 1. What SlowMCP actually does
 
 SlowMCP is an opinionated framework for **building, testing, and shipping MCP servers** on top of the official MCP TypeScript SDK.

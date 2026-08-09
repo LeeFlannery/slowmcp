@@ -1,6 +1,6 @@
 {
   "name": "slowmcp",
-  "version": "0.0.0-bootstrap.0",
+  "version": "0.1.0-slice.0",
   "private": true,
   "description": "Blazingly adequate. A framework for building, testing, and shipping MCP servers.",
   "type": "module",
@@ -26,6 +26,11 @@
     "typecheck": "tsc --project tsconfig.json"
   },
   "devDependencies": {
-    "coffeescript": "2.7.0"
+    "coffeescript": "2.7.0",
+    "zod": "4.4.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0"
   }
 }
