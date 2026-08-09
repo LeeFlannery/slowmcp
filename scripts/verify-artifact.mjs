@@ -1,4 +1,4 @@
-// T01 — CoffeeScript artifact proof.
+// T01: CoffeeScript artifact proof.
 //
 // Builds and packs `slowmcp`, installs the tarball into a clean project outside
 // the workspace, and proves the whole seam from one end to the other:

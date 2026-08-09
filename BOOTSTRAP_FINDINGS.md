@@ -1,4 +1,4 @@
-# SlowMCP — Bootstrap Findings
+# SlowMCP: Bootstrap Findings
 
 Phase 0 (T00–T03). Everything below was verified against the installed packages
 on **9 August 2026**, not inferred from `ARCHITECTURE.md`. Where the
@@ -32,10 +32,10 @@ knowing precisely what was proven.
 ```sh
 pnpm install
 pnpm build            # .coffee -> dist/ ESM + maps, with invariant assertions
-pnpm test             # vitest: 16 tests, artifact + protocol contract
+pnpm test             # vitest: 24 tests, artifact + protocol contract
 pnpm typecheck        # declaration surface + spike sources
 pnpm eval:artifact    # T01: pack, install externally, verify end to end
-pnpm spike:mcp        # T02: raw official SDK over Streamable HTTP
+pnpm spike:mcp        # T02: raw official SDK over Streamable HTTP, both eras
 pnpm spike:baseline   # T03: official SDK vs FastMCP, one client, same assertions
 ```
 
@@ -88,8 +88,8 @@ Verified with `node --enable-source-maps`:
 
 Consequence, and it is a good one: **the published package does not need to
 ship `.coffee` sources for source maps to be fully useful.** `files` is
-`["dist", "types"]` and the tarball contains four entries — `dist/index.js`,
-`dist/index.js.map`, `types/index.d.ts`, `package.json` — total 1,519 bytes.
+`["dist", "types"]` and the tarball contains four entries (`dist/index.js`,
+`dist/index.js.map`, `types/index.d.ts`, `package.json`) totalling 1,519 bytes.
 
 Residual wrinkle: the path printed in a consumer's stack trace
 (`node_modules/slowmcp/src/index.coffee`) does not exist on their disk. Line
@@ -97,7 +97,7 @@ numbers and code frames are correct; only "open this file" fails. Shipping
 sources would fix the path at the cost of muddying the containment story. Left
 as is, recorded here, and worth a line in the docs.
 
-## 5. Official MCP SDK v2 — APIs actually used
+## 5. Official MCP SDK v2: APIs actually used
 
 The v2 SDK is split into `@modelcontextprotocol/server` and
 `@modelcontextprotocol/client` (both 2.0.0), over a shared
@@ -153,14 +153,15 @@ servers" architecture fits without adaptation.
 
 ```text
 PASS spike:mcp
-  protocol      2026-07-28
   server        greeter@1.0.0
-  tools/list    greet
-  tools/call    Hello, Detroit.
+  modern        negotiated 2026-07-28 · tools/list greet · tools/call Hello, Detroit.
+  legacy        negotiated 2025-11-25 · tools/list greet · tools/call Hello, Detroit.
 ```
 
-Discovery and invocation both succeed over modern Streamable HTTP, driven by
-the official `Client`. See `BASELINE_FINDINGS.md` for the FastMCP half.
+Discovery and invocation both succeed over Streamable HTTP in both eras, driven
+by the official `Client`, with the negotiated revision asserted against the one
+requested rather than merely reported. See `BASELINE_FINDINGS.md` for the
+FastMCP half.
 
 ## 7. Architecture assumptions that proved incorrect
 
@@ -171,7 +172,7 @@ This is the most consequential finding of the phase.
 `ClientOptions.versionNegotiation.mode` **defaults to `'legacy'`**. A client
 constructed the obvious way negotiates **2025-11-25**, not 2026-07-28, against
 a server that fully supports the modern era. The first spike run produced
-`protocol 2025-11-25` and passed every other assertion — a green test proving
+`protocol 2025-11-25` and passed every other assertion. A green test proving
 the wrong thing.
 
 Reaching 2026-07-28 requires `{ versionNegotiation: { mode: 'auto' } }` (probe
@@ -179,21 +180,30 @@ and upgrade) or `{ mode: { pin: '...' } }`.
 
 Compounding this: `LATEST_PROTOCOL_VERSION` exported by the client is
 `'2025-11-25'`, and `SUPPORTED_PROTOCOL_VERSIONS` is
-`['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05', '2024-10-07']` —
+`['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05', '2024-10-07']`.
 2026-07-28 does not appear in either. The modern era is a separate axis
 (`ProtocolEra`, reached through the `discover` probe), not a member of that
 list. Any code that reasons about "modern" by comparing against those constants
 will be wrong.
 
-Consequences for SlowMCP:
+Consequences for SlowMCP, now implemented in the spike harness:
 
-- `slowmcp/testing` must set the negotiation mode explicitly and **must assert
-  the negotiated revision**, not merely that calls succeed. An implicit default
-  would silently downgrade every user's contract tests.
+- An era is a stated pair, never a derived one: the negotiation mode we ask
+  for, and the protocol revision we require to have actually happened.
+  `spikes/src/drive-contract.ts` exports `MODERN` (`auto` / `2026-07-28`) and
+  `LEGACY` (`legacy` / `2025-11-25`).
+- The harness asserts the negotiated revision **before any other assertion**,
+  so a run that lands in the wrong era fails on the era rather than passing
+  everything downstream. A test pins this behaviour by requesting an impossible
+  revision and requiring the failure.
+- `slowmcp/testing` must carry the same rule forward. An implicit default would
+  silently downgrade every user's contract tests.
 - `slowmcp check` needs distinct `modern-http` and `legacy-http` gates that each
   assert the revision they claim to be testing. The eval table already lists
   both; this finding is why they cannot share a client configuration.
-- Do not derive "is modern" from `LATEST_PROTOCOL_VERSION`.
+- **Never derive "modern" from `LATEST_PROTOCOL_VERSION` or
+  `SUPPORTED_PROTOCOL_VERSIONS`.** Nothing in the repository references either
+  constant, and nothing should.
 
 ### 7.2 `slowmcp` is not `@modelcontextprotocol/sdk`
 
@@ -234,7 +244,7 @@ resources, prompts, Inspector.
 the **installed tarball** under `moduleResolution: nodenext`, and a negative
 fixture whose five `@ts-expect-error` directives must all fire. The negative
 fixture was itself verified by adding a directive that should not error and
-confirming `tsc` fails with TS2578 — the fixture catches silent widening, which
+confirming `tsc` fails with TS2578. The fixture catches silent widening, which
 is the failure mode that matters for a handwritten declaration surface.
 
 **Package contract.** Green. `pnpm pack` → install into a fresh npm project in
@@ -262,10 +272,10 @@ maps back to `index.coffee` with correct line and column.
    negotiated revision must be asserted, and the assertion must be visible in
    `slowmcp check` output.
 4. **Node floor untested.** §7.4.
-5. **Zod-to-JSON-Schema output is a public surface.** The advertised
-   `inputSchema` is client-observable and differs between the raw SDK and
-   FastMCP for the identical Zod schema (see `BASELINE_FINDINGS.md`). SlowMCP
-   must make a deliberate choice here rather than inherit one.
+5. **Protocol-era drift in the harness itself.** The era assertion is only as
+   good as the literals in `MODERN` and `LEGACY`. When the ecosystem moves,
+   those constants must be updated deliberately, and the update should be
+   visible in a diff rather than absorbed by a helpful default.
 6. **Stdio is entirely unproven.** No spike covers stdout protocol integrity,
    process lifecycle, or signals. It is the transport most likely to be broken
    by CLI chatter, and CoffeeScript's compile step adds a path-resolution

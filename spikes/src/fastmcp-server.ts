@@ -1,4 +1,4 @@
-// T03 — the same greet contract implemented with Prefect FastMCP TypeScript.
+// T03: the same greet contract implemented with Prefect FastMCP TypeScript.
 //
 // Written the way the FastMCP docs lead you to write it, not translated from
 // the raw-SDK version. The point is to observe its real ergonomics.

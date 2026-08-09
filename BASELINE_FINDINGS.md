@@ -1,7 +1,7 @@
-# SlowMCP — Competitive Baseline Findings
+# SlowMCP: Competitive Baseline Findings
 
-T03. The same `greet` contract implemented twice — directly on the official MCP
-SDK, and with Prefect FastMCP TypeScript — driven by one official MCP `Client`
+T03. The same `greet` contract implemented twice, directly on the official MCP
+SDK and with Prefect FastMCP TypeScript, driven by one official MCP `Client`
 with identical assertions.
 
 Measured on **9 August 2026** against `@modelcontextprotocol/server@2.0.0`,
@@ -14,17 +14,27 @@ command or from the commands quoted beside it. Nothing here is estimated.
 
 ```text
 PASS spike:baseline
-  protocol      2026-07-28 (both)
-  equivalence   tools/list and tools/call match
-  official-sdk  25 significant lines (raw-sdk-server.ts)
-  fastmcp       17 significant lines (fastmcp-server.ts)
-  inputSchema   differs on advertised keys:
-                additionalProperties: official-sdk=(absent)  fastmcp=false
+
+  protocol eras
+    modern   2026-07-28  both implementations equivalent (tools/list, tools/call)
+    legacy   2025-11-25  both implementations equivalent (tools/list, tools/call)
+
+  authoring size
+    official-sdk  25 significant lines (raw-sdk-server.ts)
+    fastmcp       17 significant lines (fastmcp-server.ts)
+
+  advertised inputSchema, same Zod validator
+    key                  official-sdk  fastmcp
+    $schema              draft/2020-12  draft/2020-12
+    additionalProperties (absent)      false          <- differs
+    properties           {name: …}      {name: …}
+    required             ["name"]      ["name"]
+    type                 "object"      "object"
 ```
 
-Both implementations negotiate 2026-07-28, advertise one tool named `greet`
-with the same description, and return `Hello, Detroit.` for
-`{ name: "Detroit" }`. They are behaviourally equivalent over the protocol.
+In both eras, both implementations advertise one tool named `greet` with the
+same description and return `Hello, Detroit.` for `{ name: "Detroit" }`. They
+are behaviourally equivalent over the protocol.
 
 ## 2. API shape
 
@@ -83,21 +93,30 @@ stack, a CLI (`citty`, `@clack/prompts`, `listr2`, `cli-table3`), a file
 watcher, and YAML. That is a coherent trade for a batteries-included framework,
 not a defect.
 
-## 4. Observable divergence
+## 4. Observable divergence, as data
 
-One difference, and it is client-visible, so it is reported rather than
-asserted away: FastMCP advertises `additionalProperties: false` on the tool's
-`inputSchema`; the raw SDK omits the key entirely. Same Zod schema, same
-validator, different advertised JSON Schema.
+Given the identical Zod validator, the two frameworks advertise different JSON
+Schema. FastMCP emits `additionalProperties: false`; the raw SDK omits the key.
+Every other advertised key agrees.
 
-The spike's `assertEquivalent` covers negotiated revision, server identity,
-tool listing, description, and call result. `diffAdvertisedSchemas` reports
-schema differences separately, and `spikes/test/protocol.test.ts` pins the
-current divergence so that a change in either framework fails a test instead of
-passing silently.
+This is a **measurement, not a defect**. Both schemas are valid, both describe
+the same accepted input, and the difference is exactly the kind of row a
+comparison harness exists to publish: two frameworks presenting the same tool
+differently to the same client.
 
-**SlowMCP must choose deliberately.** Closing the schema is arguably better
-behaviour; inheriting whichever default falls out of the SDK is not a choice.
+How it is handled:
+
+- `assertEquivalent` covers negotiated revision, server identity, tool listing,
+  description, and call result. Behaviour must match.
+- `compareAdvertisedSchemas` returns every advertised key with what each
+  implementation emitted and whether they agreed. It normalizes nothing.
+- `spikes/test/protocol.test.ts` pins the current divergence, so a change in
+  either framework fails a test and the comparison gets regenerated instead of
+  quietly going stale.
+
+Nothing here needs fixing, and SlowMCP should not treat matching either
+framework's choice as a goal. When SlowMCP becomes the third row in this table,
+whatever it emits becomes another data point.
 
 ## 5. What FastMCP already does well
 
@@ -121,7 +140,7 @@ Observed in its declaration surface, not from its docs:
 
 Directly from the list above, this is the do-not-build set for v0.1:
 
-- auth of any kind — no bearer verifiers, no JWT, no OAuth server, no proxy;
+- auth of any kind: no bearer verifiers, no JWT, no OAuth server, no proxy;
 - gateways, proxying, and OpenAPI generation;
 - a middleware system;
 - server composition, mounting, and tool transforms;
@@ -147,7 +166,7 @@ What neither baseline gives you, and what the bootstrap phase made concrete:
    negotiated revision is worth more than any authoring sugar.
 
 2. **A release contract.** Nothing in either baseline answers "is this server
-   shippable?" — packed-tarball imports, declaration/runtime agreement, both
+   shippable?". Packed-tarball imports, declaration/runtime agreement, both
    transports, both protocol eras, Inspector compatibility. `slowmcp check` is
    the differentiated product.
 

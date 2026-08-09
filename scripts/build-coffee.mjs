@@ -50,12 +50,12 @@ for (const js of jsFiles) {
     problems.push(`${js}: no sourceMappingURL comment`)
   }
   if (/\brequire\(/.test(body)) {
-    problems.push(`${js}: contains require() — output must be ESM`)
+    problems.push(`${js}: contains require(), output must be ESM`)
   }
 
   const map = JSON.parse(readFileSync(mapPath, 'utf8'))
   if (!Array.isArray(map.sourcesContent) || map.sourcesContent.some((s) => !s)) {
-    problems.push(`${mapPath}: sourcesContent missing — maps would need shipped .coffee files`)
+    problems.push(`${mapPath}: sourcesContent missing, maps would need shipped .coffee files`)
   }
   if (!map.sources?.every((s) => s.endsWith('.coffee'))) {
     problems.push(`${mapPath}: sources do not point at .coffee`)

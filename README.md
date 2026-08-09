@@ -14,8 +14,8 @@ Bootstrap phase. The framework does not exist yet.
 
 What exists is the proof that it can: a CoffeeScript build that produces clean
 ESM with working source maps and TypeScript declarations, a packed-tarball
-consumer that installs without CoffeeScript, and two baseline `greet` servers —
-one on the official MCP SDK, one on FastMCP — driven by the same official MCP
+consumer that installs without CoffeeScript, and two baseline `greet` servers,
+one on the official MCP SDK and one on FastMCP, driven by the same official MCP
 Client assertions.
 
 See `BOOTSTRAP_FINDINGS.md` and `BASELINE_FINDINGS.md`.

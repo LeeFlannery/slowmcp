@@ -1,4 +1,4 @@
-// T01 — the compiled artifact, exercised from inside the workspace.
+// T01: the compiled artifact, exercised from inside the workspace.
 //
 // The authoritative proof runs against the packed tarball in a clean external
 // project (`pnpm eval:artifact`). This suite catches regressions faster.
@@ -12,7 +12,7 @@ const packageDir = join(dirname(fileURLToPath(import.meta.url)), '..')
 const distEntry = join(packageDir, 'dist', 'index.js')
 
 if (!existsSync(distEntry)) {
-  throw new Error('dist/index.js is missing — run `pnpm build` before `pnpm test`')
+  throw new Error('dist/index.js is missing, run `pnpm build` before `pnpm test`')
 }
 
 const { greet, version, detonate } = await import(distEntry)

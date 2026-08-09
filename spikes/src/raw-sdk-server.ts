@@ -1,4 +1,4 @@
-// T02 — the greet contract implemented directly on the official MCP SDK.
+// T02: the greet contract implemented directly on the official MCP SDK.
 //
 // This is the baseline SlowMCP must justify itself against. Nothing here is
 // wrapped or abstracted.

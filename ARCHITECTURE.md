@@ -711,9 +711,13 @@ Build official `McpServer` instances from SlowMCP definitions and verify registr
 
 ### Layer C — in-process modern HTTP integration
 
-Use the official MCP `Client` and official Streamable HTTP client transport. Wire requests directly to the official `createMcpHandler(...).fetch` path where possible.
+Use the official MCP `Client` and official Streamable HTTP client transport. Wire requests directly to the official `createMcpHandler(...).fetch` path where possible. Verified working in T02: `StreamableHTTPClientTransportOptions.fetch` accepts an in-process handler, so the official transport is used unmodified.
 
 This is the primary fast integration harness.
+
+**Protocol era is stated, then asserted.** The official client's `versionNegotiation.mode` defaults to `'legacy'`, so a client constructed the obvious way negotiates 2025-11-25 against a fully modern server and passes every other assertion. Every harness must therefore declare two things (the negotiation mode it asks for, and the protocol revision it requires to have actually happened) and assert the second before any capability assertion. See `BOOTSTRAP_FINDINGS.md` §7.1.
+
+Never derive "modern" from `LATEST_PROTOCOL_VERSION` or `SUPPORTED_PROTOCOL_VERSIONS`. The SDK exports `'2025-11-25'` as latest and omits 2026-07-28 from the supported list, because the modern era is a separate axis reached through the discovery probe.
 
 ### Layer D — real-process stdio
 
@@ -846,8 +850,9 @@ The credibility example.
 Three servers expose equivalent behavior:
 
 ```text
-raw/       -> official MCP SDK directly
-slowmcp/  -> SlowMCP
+official-sdk/  -> official MCP SDK directly
+fastmcp/       -> Prefect FastMCP TypeScript
+slowmcp/       -> SlowMCP
 ```
 
 One official client drives all three and compares normalized results.
@@ -860,9 +865,13 @@ The comparison should publish real, generated evidence such as:
 - bootstrap/configuration steps;
 - equivalent discovered capabilities;
 - normalized client-observed results;
+- advertised JSON Schema per implementation;
+- negotiated protocol revision per era;
 - transport behavior.
 
 Do not publish flattering numbers unless CI can reproduce them.
+
+**Divergence is output, not failure.** Where implementations differ observably but remain behaviorally equivalent, the harness records what each one emitted and publishes the row. T03 already found one: given the identical Zod validator, FastMCP advertises `additionalProperties: false` and the raw SDK omits the key. Neither is wrong. The harness must not normalize such differences away, and matching another framework's choice is not a goal.
 
 ### `remote-http`
 
@@ -1002,6 +1011,8 @@ CoffeeScript remains contained.
 - delegate protocol parsing/encoding to official SDK;
 - no custom wire codec;
 - no custom version negotiation;
+- configure the intended negotiation mode explicitly and assert the revision actually negotiated;
+- never infer the modern revision from SDK version constants;
 - no hidden session emulation;
 - bind local Node convenience server to loopback by default;
 - apply host/origin validation to local HTTP serving;
@@ -1073,6 +1084,14 @@ The expected answer is:
 ## 18. Sources and versioning
 
 This architecture was last reconciled against the public ecosystem on **August 9, 2026**. Implementation agents must re-check dependency versions and public APIs during T00/T03 rather than treating version numbers or competitor surfaces in this document as permanent.
+
+T00–T03 have now run. Where this document and the findings disagree, **the findings win**: they record what was verified against installed packages rather than what was expected.
+
+- `BOOTSTRAP_FINDINGS.md`: pinned versions, CoffeeScript and source-map behavior, the official SDK APIs actually used, and four assumptions in this document that proved incorrect.
+- `BASELINE_FINDINGS.md`: the measured FastMCP comparison and the do-not-build set.
+- `docs/bootstrap-2026-08.md`: the narrative phase report.
+
+Corrections already folded into this document: the v2 SDK is the `@modelcontextprotocol/server` / `client` / `core` split rather than `@modelcontextprotocol/sdk`; protocol-era negotiation is opt-in and must be asserted (§10, §15); source maps do not require shipping `.coffee`; the `framework-parity` layout in §12 now matches §2.
 
 Primary baselines:
 
