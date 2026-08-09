@@ -5,9 +5,12 @@
 An opinionated framework for building, testing, and shipping MCP servers on top
 of the official MCP TypeScript SDK. Implemented in CoffeeScript.
 
-Read `BOOTSTRAP_FINDINGS.md` and `BASELINE_FINDINGS.md` before changing the
-build, the export map, or anything that touches the official SDK. They record
-what was verified against the real packages rather than assumed.
+Read `ARCHITECTURE.md` before changing public API or transport behavior.
+
+Read `BOOTSTRAP_FINDINGS.md` and `BASELINE_FINDINGS.md` alongside it, and let
+them win on specifics. `ARCHITECTURE.md` was reconciled against the ecosystem
+on 9 August 2026; the findings record what was actually verified against the
+installed packages, including the places where the architecture was wrong.
 
 ## Non-negotiables
 
