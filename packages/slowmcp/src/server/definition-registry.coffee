@@ -1,14 +1,15 @@
 # Stores server metadata and capability definitions. No MCP wire behavior
-# belongs here: this is a validated, ordered, immutable-on-read record that
-# `buildMcpServer` turns into an official server instance.
+# belongs here.
+#
+# Each capability kind is one `DefinitionCollection`, so resources and prompts
+# will be added as sibling collections rather than as new bespoke code paths.
 
+import { DefinitionCollection } from './definition-collection.js'
 import { SlowMcpError } from '../errors/slowmcp-error.js'
+import { validateTool } from '../definitions/tool.js'
 
 isNonEmptyString = (value) ->
   typeof value is 'string' and value.trim().length > 0
-
-isStandardSchema = (value) ->
-  value? and typeof value is 'object' and value['~standard']?.version is 1
 
 export class DefinitionRegistry
   constructor: (metadata = {}) ->
@@ -19,39 +20,22 @@ export class DefinitionRegistry
 
     @name = metadata.name
     @version = metadata.version
-    # Insertion order is part of the contract: snapshots must be deterministic.
-    @_tools = new Map()
+    @tools = new DefinitionCollection 'tool', validateTool
 
-  addTool: (definition = {}) ->
-    { name, description, input, handler } = definition
-
-    unless isNonEmptyString name
-      throw new SlowMcpError 'tool({ name }) requires a non-empty string', 'SLOWMCP_INVALID_DEFINITION'
-    unless typeof handler is 'function'
-      throw new SlowMcpError "tool('#{name}') requires a handler function", 'SLOWMCP_INVALID_DEFINITION'
-    if description? and not isNonEmptyString description
-      throw new SlowMcpError "tool('#{name}') description must be a non-empty string when provided", 'SLOWMCP_INVALID_DEFINITION'
-    if input? and not isStandardSchema input
-      throw new SlowMcpError(
-        "tool('#{name}') input must be a Standard Schema validator (for example a Zod object)",
-        'SLOWMCP_INVALID_DEFINITION'
-      )
-    if @_tools.has name
-      throw new SlowMcpError "tool('#{name}') is already defined", 'SLOWMCP_DUPLICATE_DEFINITION'
-
-    @_tools.set name, Object.freeze { name, description, input, handler }
+  addTool: (definition) ->
+    @tools.add definition
     this
 
   # An immutable snapshot. Fresh official server instances are built from this,
-  # so later mutation of the registry cannot alter a server already serving.
+  # so later registration cannot alter a handler that is already serving.
   snapshot: ->
     Object.freeze
       name: @name
       version: @version
-      tools: Object.freeze Array.from @_tools.values()
+      tools: @tools.snapshot()
 
   # Safe diagnostics for tests and the CLI. Never includes handlers.
   describe: ->
     name: @name
     version: @version
-    tools: (({ name, description }) -> { name, description }) tool for tool in Array.from @_tools.values()
+    tools: ({ name: tool.name, description: tool.description } for tool in @tools.values())

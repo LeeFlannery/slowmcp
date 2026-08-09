@@ -1,11 +1,11 @@
 /**
- * SlowMCP public type contract.
+ * SlowMCP root export: the authoring API.
  *
  * CoffeeScript emits no declarations, so this file is a handwritten public
  * specification rather than a build artifact. It is verified from outside the
  * package: contract fixtures compile against the packed tarball, and
- * `scripts/verify-export-surface.mjs` compares the names declared here against
- * the names the built module actually exports.
+ * `scripts/verify-export-surface.mjs` compares the names declared for every
+ * public subpath against the names each built entry actually exports.
  *
  * Keep this surface small. Every export here is a promise.
  */
@@ -112,95 +112,6 @@ export interface SlowMcpServer {
 }
 
 export declare function createServer(metadata: ServerMetadata): SlowMcpServer
-
-// ---------------------------------------------------------------------------
-// Transports
-// ---------------------------------------------------------------------------
-
-/**
- * The official SDK's HTTP handler. SlowMCP returns it unwrapped; the shape is
- * declared structurally so the public surface stays free of SDK type imports.
- */
-export interface McpHttpHandlerLike {
-  fetch: (request: Request, options?: unknown) => Promise<Response>
-  close: () => Promise<void>
-  [key: string]: unknown
-}
-
-/** Serves an app over Streamable HTTP, one fresh server instance per exchange. */
-export declare function createHttpHandler(
-  app: SlowMcpServer,
-  options?: Record<string, unknown>
-): McpHttpHandlerLike
-
-// ---------------------------------------------------------------------------
-// Protocol compatibility
-// ---------------------------------------------------------------------------
-
-/**
- * SlowMCP's declared protocol compatibility. Owned by SlowMCP and never
- * derived from SDK version constants, which omit the modern revision.
- */
-export interface ProtocolPolicy {
-  /** Negotiation mode requested of the official client. */
-  readonly negotiation: 'auto' | 'legacy'
-  /** Revisions a connection may have negotiated and still be accepted. */
-  readonly accepts: readonly string[]
-  /** The revision SlowMCP is built and tested against. */
-  readonly preferred: string
-}
-
-export declare const protocolPolicy: ProtocolPolicy
-
-export declare function satisfiesProtocolPolicy(negotiated: string | undefined): boolean
-
-/** Returns the revision, or throws `SlowMcpError` if it violates the policy. */
-export declare function assertProtocolPolicy(
-  negotiated: string | undefined,
-  context?: string
-): string
-
-// ---------------------------------------------------------------------------
-// Testing
-// ---------------------------------------------------------------------------
-
-/** A tool as advertised over the protocol. */
-export interface AdvertisedTool {
-  name: string
-  description?: string
-  inputSchema?: Record<string, unknown>
-  [key: string]: unknown
-}
-
-export interface CallResult {
-  content?: Array<{ type: string; text?: string; [key: string]: unknown }>
-  isError?: boolean
-  [key: string]: unknown
-}
-
-/**
- * Application test harness backed by a real official MCP Client.
- *
- * Connecting is lazy and asserts SlowMCP's protocol policy before any caller
- * assertion runs, so a session that negotiated an unacceptable revision throws
- * instead of quietly passing.
- */
-export interface TestServer {
-  /** The official MCP `Client`, for assertions the sugar does not cover. */
-  client(): Promise<unknown>
-  /** The protocol revision actually negotiated. */
-  protocolVersion(): Promise<string>
-  tools(): Promise<AdvertisedTool[]>
-  call(name: string, args?: Record<string, unknown>): Promise<CallResult>
-  close(): Promise<void>
-}
-
-export interface TestServerOptions {
-  /** Client identity sent during initialization. */
-  client?: { name: string; version: string }
-}
-
-export declare function testServer(app: SlowMcpServer, options?: TestServerOptions): TestServer
 
 // ---------------------------------------------------------------------------
 // Errors and metadata

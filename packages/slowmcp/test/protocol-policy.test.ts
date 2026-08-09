@@ -12,17 +12,13 @@ import * as z from 'zod'
 
 import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
 
-const distEntry = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'index.js')
-const {
-  createServer,
-  createHttpHandler,
-  text,
-  testServer,
-  protocolPolicy,
-  satisfiesProtocolPolicy,
-  assertProtocolPolicy,
-  SlowMcpError
-} = await import(distEntry)
+const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
+const { createServer, text, SlowMcpError } = await import(join(dist, 'index.js'))
+const { createHttpHandler } = await import(join(dist, 'http.js'))
+const { testServer } = await import(join(dist, 'testing.js'))
+const { protocolPolicy, satisfiesProtocolPolicy, assertProtocolPolicy } = await import(
+  join(dist, 'protocol.js')
+)
 
 /** The revision observed during bootstrap when the SDK default is relied on. */
 const SDK_DEFAULT_REVISION = '2025-11-25'

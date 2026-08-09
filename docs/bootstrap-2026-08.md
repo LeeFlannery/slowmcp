@@ -149,7 +149,7 @@ the parts worth taking seriously are the parts nobody demos.
 pnpm install
 pnpm build
 pnpm test            # 24 tests
-pnpm eval:artifact   # pack, install into a clean external project, verify
+pnpm slowmcp:check   # pack, install into a clean external project, verify
 pnpm spike:mcp       # raw official SDK, both eras
 pnpm spike:baseline  # official SDK against FastMCP, one client, same assertions
 ```

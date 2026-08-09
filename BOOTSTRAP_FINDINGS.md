@@ -34,7 +34,7 @@ pnpm install
 pnpm build            # .coffee -> dist/ ESM + maps, with invariant assertions
 pnpm test             # vitest: 24 tests, artifact + protocol contract
 pnpm typecheck        # declaration surface + spike sources
-pnpm eval:artifact    # T01: pack, install externally, verify end to end
+pnpm slowmcp:check    # pack, install externally, verify end to end
 pnpm spike:mcp        # T02: raw official SDK over Streamable HTTP, both eras
 pnpm spike:baseline   # T03: official SDK vs FastMCP, one client, same assertions
 ```

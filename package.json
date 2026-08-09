@@ -10,7 +10,6 @@
     "build": "pnpm --filter slowmcp build",
     "test": "vitest run",
     "typecheck": "pnpm --filter slowmcp typecheck && tsc --project spikes/tsconfig.json",
-    "eval:artifact": "node scripts/slowmcp-check.mjs",
     "spike:mcp": "node --experimental-strip-types spikes/src/raw-sdk-spike.ts",
     "spike:baseline": "node --experimental-strip-types spikes/src/baseline-spike.ts",
     "slowmcp:check": "node scripts/slowmcp-check.mjs",

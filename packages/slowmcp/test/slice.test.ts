@@ -8,8 +8,9 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import * as z from 'zod'
 
-const distEntry = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'index.js')
-const { createServer, text, testServer, SlowMcpError } = await import(distEntry)
+const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist')
+const { createServer, text, SlowMcpError } = await import(join(dist, 'index.js'))
+const { testServer } = await import(join(dist, 'testing.js'))
 
 const greeter = () => {
   const app = createServer({ name: 'greeter', version: '1.0.0' })

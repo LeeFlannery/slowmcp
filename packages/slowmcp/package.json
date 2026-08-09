@@ -1,6 +1,6 @@
 {
   "name": "slowmcp",
-  "version": "0.1.0-slice.0",
+  "version": "0.1.0-slice.1",
   "private": true,
   "description": "Blazingly adequate. A framework for building, testing, and shipping MCP servers.",
   "type": "module",
@@ -13,6 +13,21 @@
       "types": "./types/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./http": {
+      "types": "./types/http.d.ts",
+      "import": "./dist/http.js",
+      "default": "./dist/http.js"
+    },
+    "./testing": {
+      "types": "./types/testing.d.ts",
+      "import": "./dist/testing.js",
+      "default": "./dist/testing.js"
+    },
+    "./protocol": {
+      "types": "./types/protocol.d.ts",
+      "import": "./dist/protocol.js",
+      "default": "./dist/protocol.js"
     },
     "./package.json": "./package.json"
   },

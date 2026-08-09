@@ -23,7 +23,15 @@ const KEEP = process.argv.includes('--keep')
 const JSON_OUT = process.argv.includes('--json')
 
 // The check names, in report order. Fixed so snapshots stay stable.
-const ORDER = ['package', 'protocol', 'tools', 'invocation', 'types', 'coffeescript-containment']
+const ORDER = [
+  'package',
+  'protocol',
+  'tools',
+  'invocation',
+  'snapshot',
+  'types',
+  'coffeescript-containment'
+]
 
 const consumerDir = mkdtempSync(join(tmpdir(), 'slowmcp-check-'))
 const results = new Map(ORDER.map((name) => [name, { ok: false, detail: 'not run' }]))
@@ -61,7 +69,11 @@ try {
         private: true,
         version: '0.0.0',
         type: 'module',
-        dependencies: { slowmcp: `file:${tarball}`, zod: '4.4.3' },
+        dependencies: {
+          slowmcp: `file:${tarball}`,
+          zod: '4.4.3',
+          '@modelcontextprotocol/client': '2.0.0'
+        },
         devDependencies: { '@types/node': '26.2.0', typescript: '7.0.2' }
       },
       null,

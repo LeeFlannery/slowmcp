@@ -60,12 +60,26 @@ pnpm install
 pnpm build            # .coffee -> dist/ ESM + source maps, with invariant checks
 pnpm test             # vitest: artifact + protocol contract suites
 pnpm typecheck        # declaration surface and spike sources
-pnpm slowmcp:check    # release contract: pack, clean consumer, six checks
+pnpm slowmcp:check    # release contract: pack, clean consumer, seven checks
 pnpm ref:hello        # examples/hello-tool, self-verifying
 pnpm eval:export-surface  # runtime exports vs declared exports, both directions
 pnpm spike:mcp        # raw official-SDK greet server over Streamable HTTP
 pnpm spike:baseline   # official SDK vs FastMCP, same official-client assertions
 ```
+
+## Public API
+
+```text
+slowmcp            createServer, text, SlowMcpError, version
+slowmcp/http       createHttpHandler
+slowmcp/testing    testServer
+slowmcp/protocol   protocolPolicy, satisfiesProtocolPolicy, assertProtocolPolicy
+```
+
+The root is the authoring API. Do not re-export transports, testing, or the
+protocol policy from it for convenience. Adding a subpath means adding an
+`exports` entry, a `types/<name>.d.ts`, and coverage in the export-surface
+guard and the packed consumer.
 
 ## Protocol policy
 

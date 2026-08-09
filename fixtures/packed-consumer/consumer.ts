@@ -1,11 +1,17 @@
 // TypeScript consumer. Compiles and runs against the installed tarball only.
 //
-// The point of this file is inference: the handler argument must be derived
-// from the Zod schema without any annotation by the consumer.
+// Every public subpath is imported here, so declaration resolution is proven
+// for all four, not just the root.
 import assert from 'node:assert/strict'
 
-import { createServer, text, testServer, protocolPolicy } from 'slowmcp'
-import type { SlowMcpServer, ToolResult } from 'slowmcp'
+import { createServer, text } from 'slowmcp'
+import type { SlowMcpServer, ToolResult, ServerDescription } from 'slowmcp'
+import { createHttpHandler } from 'slowmcp/http'
+import type { McpHttpHandlerLike } from 'slowmcp/http'
+import { testServer } from 'slowmcp/testing'
+import type { TestServer, AdvertisedTool } from 'slowmcp/testing'
+import { protocolPolicy, satisfiesProtocolPolicy, assertProtocolPolicy } from 'slowmcp/protocol'
+import type { ProtocolPolicy } from 'slowmcp/protocol'
 import * as z from 'zod'
 
 const app: SlowMcpServer = createServer({ name: 'greeter', version: '1.0.0' })
@@ -23,30 +29,38 @@ app.tool({
 })
 
 // A tool with no schema still types, and its handler input is not `any`.
-app.tool({
-  name: 'ping',
-  handler: (): ToolResult => text('pong')
-})
+app.tool({ name: 'ping', handler: (): ToolResult => text('pong') })
 
 // Registration is chainable.
 const chained: SlowMcpServer = app.tool({ name: 'pong', handler: () => text('ping') })
 assert.equal(chained.name, 'greeter')
 
-const accepts: readonly string[] = protocolPolicy.accepts
-assert.ok(accepts.length > 0)
+const description: ServerDescription = app.describe()
+assert.equal(description.tools.length, 3)
 
-const mcp = testServer(app)
+// slowmcp/protocol
+const policy: ProtocolPolicy = protocolPolicy
+const accepts: readonly string[] = policy.accepts
+assert.ok(satisfiesProtocolPolicy(policy.preferred))
+assert.equal(assertProtocolPolicy(policy.preferred), policy.preferred)
+
+// slowmcp/http
+const handler: McpHttpHandlerLike = createHttpHandler(app)
+
+// slowmcp/testing
+const mcp: TestServer = testServer(app)
 try {
   const negotiated: string = await mcp.protocolVersion()
   assert.ok(accepts.includes(negotiated))
 
-  const names = (await mcp.tools()).map((tool) => tool.name).sort()
-  assert.deepEqual(names, ['greet', 'ping', 'pong'])
+  const tools: AdvertisedTool[] = await mcp.tools()
+  assert.deepEqual(tools.map((tool) => tool.name).sort(), ['greet', 'ping', 'pong'])
 
   const result = await mcp.call('greet', { name: 'Lee' })
   assert.equal(result.content?.[0]?.text, 'Hello, Lee!')
 } finally {
   await mcp.close()
+  await handler.close()
 }
 
 console.log('ts-consumer ok')

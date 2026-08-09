@@ -22,33 +22,66 @@ async function check(name, fn) {
   }
 }
 
+/** Every public subpath, and the value exports each one promises. */
+const SUBPATHS = {
+  slowmcp: ['SlowMcpError', 'createServer', 'text', 'version'],
+  'slowmcp/http': ['createHttpHandler'],
+  'slowmcp/testing': ['testServer'],
+  'slowmcp/protocol': ['assertProtocolPolicy', 'protocolPolicy', 'satisfiesProtocolPolicy']
+}
+
+const DECLARATION_FILES = {
+  slowmcp: 'index.d.ts',
+  'slowmcp/http': 'http.d.ts',
+  'slowmcp/testing': 'testing.d.ts',
+  'slowmcp/protocol': 'protocol.d.ts'
+}
+
+const declaredIn = (pkgRoot, file) =>
+  new Set(
+    [
+      ...readFileSync(join(pkgRoot, 'types', file), 'utf8').matchAll(
+        /^export declare (?:const|function|class|let|var)\s+([A-Za-z_$][\w$]*)/gm
+      )
+    ].map((match) => match[1])
+  )
+
 // ---------------------------------------------------------------------------
 
 await check('package', async () => {
-  const slowmcp = await import('slowmcp')
   const pkgRoot = dirname(require.resolve('slowmcp/package.json'))
   assert.ok(pkgRoot.includes('node_modules'), `resolved outside node_modules: ${pkgRoot}`)
 
-  const declarations = readFileSync(join(pkgRoot, 'types', 'index.d.ts'), 'utf8')
-  const declared = new Set(
-    [...declarations.matchAll(/^export declare (?:const|function|class|let|var)\s+([A-Za-z_$][\w$]*)/gm)]
-      .map((m) => m[1])
-  )
-  const runtime = new Set(Object.keys(slowmcp))
+  for (const [specifier, expected] of Object.entries(SUBPATHS)) {
+    // Resolves through the export map, from the tarball, not workspace source.
+    const loaded = await import(specifier)
+    const runtime = new Set(Object.keys(loaded))
+    assert.deepEqual([...runtime].sort(), [...expected].sort(), `${specifier} runtime exports`)
 
-  const undeclared = [...runtime].filter((n) => !declared.has(n)).sort()
-  const missing = [...declared].filter((n) => !runtime.has(n)).sort()
-  assert.deepEqual(undeclared, [], `exported but undeclared: ${undeclared.join(', ')}`)
-  assert.deepEqual(missing, [], `declared but not exported: ${missing.join(', ')}`)
+    const declared = declaredIn(pkgRoot, DECLARATION_FILES[specifier])
+    const undeclared = [...runtime].filter((n) => !declared.has(n)).sort()
+    const missing = [...declared].filter((n) => !runtime.has(n)).sort()
+    assert.deepEqual(undeclared, [], `${specifier}: exported but undeclared: ${undeclared.join(', ')}`)
+    assert.deepEqual(missing, [], `${specifier}: declared but not exported: ${missing.join(', ')}`)
+  }
+
+  // The root must not leak the subpath surfaces back out for convenience.
+  const root = await import('slowmcp')
+  for (const leaked of ['createHttpHandler', 'testServer', 'protocolPolicy']) {
+    assert.ok(!(leaked in root), `${leaked} leaked back onto the root export`)
+  }
 
   const map = JSON.parse(readFileSync(join(pkgRoot, 'dist', 'index.js.map'), 'utf8'))
   assert.ok(map.sourcesContent?.[0]?.length > 0, 'source map has no sourcesContent')
 
-  return `${runtime.size} exports, declarations agree`
+  const count = Object.values(SUBPATHS).flat().length
+  return `${Object.keys(SUBPATHS).length} subpaths, ${count} exports, declarations agree`
 })
 
 await check('protocol', async () => {
-  const { createServer, text, testServer, protocolPolicy } = await import('slowmcp')
+  const { createServer, text } = await import('slowmcp')
+  const { testServer } = await import('slowmcp/testing')
+  const { protocolPolicy } = await import('slowmcp/protocol')
   const z = await import('zod')
 
   const app = createServer({ name: 'probe', version: '1.0.0' })
@@ -68,7 +101,8 @@ await check('protocol', async () => {
 })
 
 await check('tools', async () => {
-  const { createServer, text, testServer } = await import('slowmcp')
+  const { createServer, text } = await import('slowmcp')
+  const { testServer } = await import('slowmcp/testing')
   const z = await import('zod')
 
   const app = createServer({ name: 'probe', version: '1.0.0' })
@@ -87,14 +121,15 @@ await check('tools', async () => {
     assert.equal(tools[0].inputSchema.type, 'object')
     assert.deepEqual(tools[0].inputSchema.required, ['name'])
     assert.equal(tools[0].inputSchema.properties.name.description, 'Who to greet.')
-    return `1 tool discovered with advertised schema`
+    return '1 tool discovered with advertised schema'
   } finally {
     await mcp.close()
   }
 })
 
 await check('invocation', async () => {
-  const { testServer } = await import('slowmcp')
+  const { createServer, SlowMcpError } = await import('slowmcp')
+  const { testServer } = await import('slowmcp/testing')
   const { default: app } = await import('./server.mjs')
 
   const mcp = testServer(app)
@@ -103,7 +138,6 @@ await check('invocation', async () => {
     assert.notEqual(result.isError, true, 'call reported an error')
     assert.equal(result.content[0].text, 'Hello, Lee!')
 
-    const { createServer, SlowMcpError } = await import('slowmcp')
     const dup = createServer({ name: 'dup', version: '1.0.0' })
     dup.tool({ name: 'a', handler: () => ({ content: [] }) })
     assert.throws(
@@ -114,6 +148,47 @@ await check('invocation', async () => {
     return 'greet({ name: "Lee" }) -> "Hello, Lee!"'
   } finally {
     await mcp.close()
+  }
+})
+
+await check('snapshot', async () => {
+  // The frozen contract: a handler serves the snapshot taken when it was
+  // created, and a later registration cannot change what it serves.
+  const { createServer, text } = await import('slowmcp')
+  const { createHttpHandler } = await import('slowmcp/http')
+  const { Client, StreamableHTTPClientTransport } = await import('@modelcontextprotocol/client')
+  const { protocolPolicy } = await import('slowmcp/protocol')
+
+  const app = createServer({ name: 'snapshot', version: '1.0.0' })
+  app.tool({ name: 'a', handler: () => text('a') })
+
+  const first = createHttpHandler(app)
+  app.tool({ name: 'b', handler: () => text('b') })
+  const second = createHttpHandler(app)
+
+  const namesFrom = async (handler) => {
+    const transport = new StreamableHTTPClientTransport(new URL('http://slowmcp.test/mcp'), {
+      fetch: (input, init) => handler.fetch(new Request(input, init))
+    })
+    const client = new Client(
+      { name: 'snapshot-probe', version: '0.0.0' },
+      { versionNegotiation: { mode: protocolPolicy.negotiation } }
+    )
+    try {
+      await client.connect(transport)
+      return (await client.listTools()).tools.map((tool) => tool.name).sort()
+    } finally {
+      await client.close().catch(() => {})
+    }
+  }
+
+  try {
+    assert.deepEqual(await namesFrom(first), ['a'], 'existing handler served a late registration')
+    assert.deepEqual(await namesFrom(second), ['a', 'b'], 'new handler missed a registration')
+    return 'existing handler serves [a]; new handler serves [a, b]'
+  } finally {
+    await first.close()
+    await second.close()
   }
 })
 

@@ -8,7 +8,8 @@
 
 import assert from 'node:assert/strict'
 
-import { protocolPolicy, testServer } from 'slowmcp'
+import { protocolPolicy } from 'slowmcp/protocol'
+import { testServer } from 'slowmcp/testing'
 
 import app from './server.mjs'
 
