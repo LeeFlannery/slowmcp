@@ -1,89 +1,122 @@
 # Phase 2 tasks
 
 Six agents, two waves. Wave 1 builds the capability and transport surface.
-Wave 2 builds everything that can only be written once that surface exists.
+Wave 2 builds everything that can only be written once that surface exists and
+is integrated.
 
-Phase 1 is complete and `pnpm phase2:ready` is green. The contract-to-check
-mapping in `ARCHITECTURE.md` §11 names what enforces what; read it before
-assuming a contract is unguarded.
+Phase 1 is complete and `pnpm phase2:ready` is green on `main`. The
+contract-to-check mapping in `ARCHITECTURE.md` §11 names what enforces what.
+Read it before assuming a contract is unguarded.
 
 ## Waves
 
 ### Wave 1
 
-| Task | Agent | Starts |
+| Task | Owner | Starts |
 |---|---|---|
-| [T20](T20-agent-a-capabilities.md) | A, capabilities | immediately |
-| [T21](T21-agent-b-transports.md) | B, transports | immediately |
-| [T22](T22-agent-c-testing-evals.md) | C, testing and evals | immediately, in three stages, gated on A and B |
+| [T20](T20-capabilities.md) | capabilities | immediately |
+| [T21](T21-transports.md) | transports | immediately |
+| [T22](T22-testing-evals.md) | testing and evals | immediately, in three stages, gated on T20 and T21 |
 
-A and B are independent of each other. C's first stage depends on neither, its
-second on A's published contracts, its third on B's.
+T20 and T21 are independent of each other. T22's first stage depends on
+neither, its second on T20's published contracts, its third on T21's.
+
+### Wave 1 integration
+
+**Sequential, never parallel.** The integration owner merges in this order:
+
+1. T20 capabilities
+2. T21 transports
+3. T22 testing and evals
+
+`pnpm phase2:ready` runs after **each** merge, not only at the end. A gate that
+fails belongs to the branch that just landed.
+
+After all three are integrated, the integration owner performs **one complete
+public-API review** before any Wave 2 task begins: every export, every
+declaration, every subpath, against `ARCHITECTURE.md` §5 and the "deliberately
+small" rule. Wave 2 designs against the reviewed surface, not against branch
+output.
 
 ### Wave 2
 
-**Do not begin Wave 2 until Wave 1 is merged to `main` and `pnpm phase2:ready`
-is green on `main`.**
+**Do not begin until Wave 1 is integrated into `main`, `pnpm phase2:ready`
+passes, and the public-API review is complete.**
 
-| Task | Agent | Depends on |
+| Task | Owner | Depends on |
 |---|---|---|
-| [T23](T23-agent-d-cli.md) | D, CLI | A, B, C |
-| [T24](T24-agent-e-references.md) | E, reference applications | A, B, C |
-| [T25](T25-agent-f-docs.md) | F, documentation | A, B, C, and E for generated numbers |
+| [T30](T30-cli.md) | CLI | T20, T21, T22 |
+| [T31](T31-reference-apps.md) | reference applications | T20, T21, T22 |
+| [T32](T32-docs.md) | documentation | T20, T21, T22, T30, T31 |
+
+T30 and T31 are independent of each other. T32 is last: it documents the CLI
+T30 ships and publishes the measurements T31 generates.
 
 ## Shared surfaces
 
-These are **integration-owned**. An agent that needs one changed opens a
-request to the integration owner, stating what it needs and why, and waits.
-No agent edits them on its branch.
+**Integration-owned.** An agent that needs one changed reports the required
+change and waits. No agent edits them on its branch.
 
 | Surface | Why it is shared |
 |---|---|
 | `packages/slowmcp/src/protocol/compatibility.coffee`, `types/protocol.d.ts` | Changing it changes what SlowMCP claims to support. It must be a visible, deliberate diff, never a side effect of a transport or capability change. |
-| `packages/slowmcp/package.json` `exports` and `files` | Every new public subpath must land with a declaration file, fixture coverage, and export-surface coverage at the same time. Uncoordinated edits ship an unexercised subpath. |
-| `scripts/phase2-ready.mjs` gate list, `scripts/slowmcp-check.mjs` `ORDER` | Check ordering is a stable snapshot surface. Agent C is the only agent that may edit these, and only on integration approval. Every other agent *requests* a check rather than adding one. |
-| root `package.json` scripts, `pnpm-workspace.yaml`, `vitest.config.ts` | Workspace-wide. Request unless your task explicitly assigns the change. |
-| `CLAUDE.md`, `ARCHITECTURE.md` | Integration reconciles these once per wave. |
+| `packages/slowmcp/package.json` `exports`, `files`, `bin` | A new public subpath must land with its declaration, its fixture coverage, and its export-map entry in one step. Uncoordinated edits ship an unexercised subpath. |
+| root `package.json` scripts, `pnpm-workspace.yaml`, `vitest.config.ts` | Workspace-wide. |
+| readiness and check ordering: `scripts/phase2-ready.mjs` gate list, `scripts/slowmcp-check.mjs` `ORDER` | Stable snapshot surface. T22 is the only agent that may edit these, on integration approval. Every other agent requests a check through T22. |
+| the public `SlowMcpServer` type in `types/index.d.ts`, where a change affects more than one agent | T20 owns the file, but a shape change that T21, T22, T30, or T31 must follow is an integration decision. |
+| `CLAUDE.md`, `ARCHITECTURE.md`, `README.md` | Integration reconciles these once per wave. |
 
-## Rules that bind every agent
+## Global invariants
 
-1. **No agent may weaken a test or a contract to make its branch green.** A
-   failing gate is a finding. Report it; do not edit the assertion.
-2. **No agent may rewrite CoffeeScript implementation code in TypeScript or
-   JavaScript.** All runtime source under `packages/slowmcp/src/` stays
-   `.coffee`. This is a product requirement. See `CLAUDE.md`.
-3. **Every new enforcement mechanism must be deliberately broken once**, and
-   the observed failure recorded in the report. A guard nobody has watched fail
-   is not evidence. Restore the break before finishing; the tree must be clean.
-4. **Protocol behavior is the official SDK's.** Never implement wire format,
-   negotiation, or a codec.
-5. **Public API changes require the declaration and the docs in the same
-   change.** CoffeeScript emits no types, so a `.d.ts` is a hand-maintained
-   promise, not a derivative.
-6. Stay inside your owned paths. Touching another agent's paths is an
-   integration request, not a commit.
-7. Work on a branch named for the task, for example `t20-capabilities`.
+Every task preserves all of these. They are not negotiable by any agent.
+
+1. **SlowMCP runtime implementation remains CoffeeScript.** All source under
+   `packages/slowmcp/src/` stays `.coffee`. No agent rewrites implementation in
+   TypeScript or JavaScript, for any reason, including "simpler".
+2. **Implementation tests are CoffeeScript** where the implementation itself is
+   under test. See each task's testing-language policy.
+3. **TypeScript remains required** where TypeScript consumption is the subject
+   under test: declarations, inference, negative fixtures, package type
+   resolution, external TypeScript consumers.
+4. **Consumer projects never require CoffeeScript.** `coffeescript` stays a
+   development dependency and never enters `dependencies`,
+   `peerDependencies`, or `optionalDependencies`.
+5. **Protocol behavior is delegated to the official MCP SDK.** No wire format,
+   no negotiation logic, no codec.
+6. **Public protocol behavior is tested through the official MCP Client**,
+   never by calling internal handlers directly.
+7. **No test may be weakened to make a branch green.** A failing gate is a
+   finding. Report it; do not edit the assertion.
+8. **Every new enforcement mechanism must be deliberately broken once** to
+   prove it can fail, with the observed failure recorded in the report.
+9. **Public APIs stay deliberately small.** Every public generic becomes part
+   of the type contract. Convenience is not a justification.
+10. **Do not chase FastMCP feature parity.** FastMCP having something is not a
+    reason for SlowMCP to have it.
 
 ## Frozen interfaces
 
-Every agent respects these. They are Phase 1 output, proven and pinned by
-tests. Changing one is an integration decision with a migration note.
+Phase 1 output, proven and pinned. Changing one is an integration decision.
 
-- **The `DefinitionCollection` sequence**: validate, reject duplicate, append
-  in insertion order, freeze. Every capability kind reuses it.
+- **The registry sequence**: validate, reject duplicate, append in insertion
+  order, freeze. Every capability kind reuses `DefinitionCollection`.
 - **Snapshot semantics**: `createHttpHandler(app)` and `testServer(app)` serve
-  the snapshot taken when they were created. A later registration cannot alter
-  a handler that is already serving.
-- **Fresh instance per exchange**: `buildMcpServer` is called per request from
-  the frozen snapshot. No server instance is reused across connections.
-- **Root export purity**: `slowmcp` exports only the authoring API. It never
-  re-exports `slowmcp/http`, `slowmcp/testing`, or `slowmcp/protocol`.
+  the snapshot taken when they were created. Later registration cannot alter a
+  handler that is already serving.
+- **Fresh instance per exchange** for HTTP: `buildMcpServer` is called per
+  request from the frozen snapshot.
+- **Root export purity**: `slowmcp` exports only the authoring API and never
+  re-exports another subpath.
 - **Protocol policy is asserted before caller assertions run**, and the policy
   literal is SlowMCP-owned, never derived from SDK constants.
 - **Result helpers do not coerce.** `text(42)` throws. Raw MCP result objects
   stay valid everywhere a helper is accepted.
 
-## Reporting
+## Working rules
 
-Each task file ends with the exact report the agent owes the integration
-owner. Send that, not a narrative.
+- Branch per task, named for it: `t20-capabilities`, `t30-cli`.
+- Stay inside owned paths. Touching another agent's paths is a report, not a
+  commit.
+- Restore every deliberate break before finishing. The tree must be clean.
+- Each task ends with the exact report the integration owner expects. Send
+  that, not a narrative.
