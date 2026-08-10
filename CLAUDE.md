@@ -24,8 +24,9 @@ This is a product requirement, not an implementation accident.
   with TypeScript or JavaScript.
 - NEVER propose TypeScript as a simplification, modernization, cleanup, or
   maintainability improvement.
-- TypeScript is for consumer-facing declarations, tests, fixtures, reference
-  implementations, and documentation examples only.
+- TypeScript is for consumer-facing declarations, type-contract fixtures,
+  external consumer and reference implementations, and documentation examples
+  only. For tests, see the test language policy below.
 - Compiled JavaScript under `dist/` is generated output and must never become
   source of truth.
 - CoffeeScript containment is an intentional package boundary: CoffeeScript is
@@ -34,6 +35,43 @@ This is a product requirement, not an implementation accident.
   architecture even if runtime behavior remains equivalent.
 
 When simplifying code, simplify the CoffeeScript as CoffeeScript.
+
+### Test language policy
+
+SlowMCP's own implementation tests should be written in CoffeeScript.
+
+TypeScript is reserved for tests where TypeScript consumption is itself under
+test, including declarations, inference, negative type fixtures, package type
+resolution, and external TypeScript consumer behavior.
+
+External protocol, parity, and reference tests may use TypeScript or JavaScript
+when they intentionally represent ordinary consumers.
+
+Do not convert TypeScript contract tests to CoffeeScript merely for
+consistency.
+
+The shorthand:
+
+> CoffeeScript tests prove SlowMCP works.
+> TypeScript tests prove users don't have to care that SlowMCP is CoffeeScript.
+
+The classifying question: if the test would mean exactly the same thing when
+SlowMCP had no TypeScript declarations, it is an implementation test and
+belongs in CoffeeScript.
+
+| Layer | Language |
+|---|---|
+| implementation | CoffeeScript |
+| implementation tests | CoffeeScript |
+| declarations | `.d.ts` |
+| type-contract fixtures | TypeScript |
+| external consumer, protocol, parity, references | JavaScript or TypeScript |
+
+CoffeeScript implementation tests import `../src/*.coffee` and are compiled on
+the fly by the `slowmcp:coffee` plugin in `vitest.config.ts`. They test source,
+not `dist`. The compiled artifact stays covered by `artifact.test.ts`, the
+workspace-consumer fixture, and `pnpm slowmcp:check`. `coffeescript` remains a
+development dependency and never reaches the published package.
 
 ## Simplification rules
 
