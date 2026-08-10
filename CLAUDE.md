@@ -99,6 +99,8 @@ pnpm test:only        # vitest without rebuilding (still refuses if dist is stal
 pnpm typecheck        # declarations, package tests, fixtures, spikes
 pnpm slowmcp:check    # release contract: pack, clean consumer, seven checks
                       # (there is no `slowmcp` binary yet; this is the command)
+pnpm phase2:ready     # the one readiness gate: composes test, typecheck,
+                      # export-surface, ref:hello, slowmcp:check
 pnpm ref:hello        # examples/hello-tool, self-verifying
 pnpm eval:export-surface  # runtime exports vs declared exports, both directions
 pnpm spike:mcp        # raw official-SDK greet server over Streamable HTTP

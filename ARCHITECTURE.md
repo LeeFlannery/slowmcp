@@ -837,7 +837,43 @@ Tests answer: "is this code correct?"
 
 Evals answer: "does SlowMCP still satisfy its product claims?"
 
+### Enforced today
+
+Reconciled against the repository on 10 August 2026. One command answers
+whether the vertical slice still holds:
+
+```sh
+pnpm phase2:ready
+```
+
+It composes `pnpm test`, `pnpm typecheck`, `pnpm eval:export-surface`,
+`pnpm ref:hello`, and `pnpm slowmcp:check`, in that order, and stops if the
+first fails. It verifies nothing itself, so it cannot pass while the gate that
+owns a contract is broken.
+
+Each Phase 1 contract, and the specific thing that goes red when it breaks:
+
+| Contract | Enforced by |
+|---|---|
+| protocol policy | `test/protocol-policy.test.ts`, including the regression that connects a default-constructed official `Client` and pins it landing on 2025-11-25; `spikes/test/protocol.test.ts`; the `protocol` check in `slowmcp:check`, from the packed tarball |
+| package/export contract | the `package` check in `slowmcp:check`, which enumerates subpaths from the *packed* export map and refuses an entry with no `types` condition; `fixtures/workspace-consumer/test/export-map.test.ts`; `test/artifact.test.ts`; `scripts/verify-export-surface.mjs` |
+| type contract | `pnpm typecheck` over declarations, the package test project, the workspace-consumer fixture, and spikes; the `types` check in `slowmcp:check`, which compiles `fixtures/packed-consumer` against the tarball with 20 `@ts-expect-error` negative fixtures |
+| containment | the `coffeescript-containment` check in `slowmcp:check`: no `.coffee` in the tarball, no compiler resolvable from the consumer, absent from every dependency field, and a thrown error whose stack still maps to `.coffee`; plus the ESM and `sourcesContent` invariants in `scripts/build-coffee.mjs` |
+| HTTP behavior | `test/slice.test.ts` and `test/snapshot-semantics.test.ts`, both through the official `Client` over the official Streamable HTTP client transport; the `tools`, `invocation`, and `snapshot` checks in `slowmcp:check` |
+| reference app | `pnpm ref:hello` through workspace resolution, and the same `verify.mjs` run again inside the packed consumer by `slowmcp:check` |
+| build freshness | `scripts/assert-build-fresh.mjs` via Vitest `globalSetup`: the suite refuses to start when `src/**/*.coffee` no longer hashes to what dist was built from |
+| version sync | `scripts/build-coffee.mjs` compares the `version` export against `package.json` and fails the build; every other guard compares export *names* and would miss it |
+
+Two limits worth stating plainly. Every HTTP round trip above is a real
+official client speaking the real protocol, but over an injected `fetch` rather
+than a bound socket: `node-http` needs the Node transport. And only Zod is
+exercised; `schema-alt` needs a second Standard Schema library. Both are
+scheduled work, not gaps in what is claimed above.
+
 ### Hard release evals
+
+**These are release targets, not current commands.** As of 10 August 2026 none
+of these names is a runnable script.
 
 | Eval | Claim |
 |---|---|
@@ -1081,6 +1117,11 @@ CoffeeScript remains contained.
 - keep runtime dependencies small.
 
 ## 16. CI
+
+**Target, not current.** No CI workflow exists yet. `protocol-contract`,
+`type-contract`, and `package-contract` are contract *names* here, never script
+names: the build plan records which existing gate enforces each one, and
+`pnpm phase2:ready` runs all of them today.
 
 Required PR jobs:
 

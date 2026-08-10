@@ -15,7 +15,8 @@
     "slowmcp:check": "node scripts/slowmcp-check.mjs",
     "eval:export-surface": "node scripts/verify-export-surface.mjs packages/slowmcp",
     "ref:hello": "pnpm --filter @slowmcp-examples/hello-tool verify",
-    "test:only": "vitest run"
+    "test:only": "vitest run",
+    "phase2:ready": "node scripts/phase2-ready.mjs"
   },
   "devDependencies": {
     "@types/node": "26.2.0",
