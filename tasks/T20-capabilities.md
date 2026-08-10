@@ -60,10 +60,13 @@ packages/slowmcp/src/results/**
 packages/slowmcp/src/errors/**
 packages/slowmcp/src/index.coffee
 packages/slowmcp/types/index.d.ts
-packages/slowmcp/test/slice.test.coffee
-packages/slowmcp/test/snapshot-semantics.test.coffee
 packages/slowmcp/test/definitions/**          new
 ```
+
+`packages/slowmcp/package.json` **`devDependencies` only**, to add the second
+Standard Schema library. Every other field in that manifest is
+integration-owned. Report the addition; do not touch `exports`, `files`,
+`dependencies`, or `bin`.
 
 ## Forbidden paths
 
@@ -76,9 +79,21 @@ fixtures/**                                   T22
 examples/**                                   T31
 docs/**                                       T32
 scripts/**                                    integration, request through T22
-packages/slowmcp/package.json                 integration
+packages/slowmcp/package.json                 integration, except devDependencies
+package.json (root), pnpm-workspace.yaml      integration
 vitest.config.ts                              integration
+packages/slowmcp/test/slice.test.coffee            shared, see below
+packages/slowmcp/test/snapshot-semantics.test.coffee   shared, see below
 ```
+
+**Those two test files are integration-owned shared surfaces**, not yours.
+`slice.test.coffee` also covers T22's harness; `snapshot-semantics.test.coffee`
+also covers T21's `createHttpHandler` and T22's `testServer`. Owning them would
+mean owning tests for code you cannot change.
+
+Put **all** new coverage in new files under `packages/slowmcp/test/definitions/`,
+including resource and prompt snapshot semantics. If a change of yours requires
+editing either shared file, report the exact edit and let integration apply it.
 
 ## Frozen interfaces
 
@@ -92,6 +107,10 @@ vitest.config.ts                              integration
 - `app.tool()` returns `app`. New registration methods match.
 - Root export purity: additions to `types/index.d.ts` are authoring-API exports
   only, never re-exports of another subpath.
+- **`SlowMcpServer` is consumed by other agents.** `types/testing.d.ts` imports
+  it, and T21's new transport declarations will too. You own the file, but a
+  change to that type's shape is an integration decision: publish the new shape
+  to T21 and T22 before landing it.
 - `text()` refuses non-strings. New helpers refuse rather than coerce.
 - Every error is a `SlowMcpError` with a stable `code`. Existing codes keep
   their meaning.

@@ -46,11 +46,20 @@ corrupts the protocol stream.
   - The server package exports `validateHostHeader`,
     `localhostAllowedHostnames`, `hostHeaderValidationResponse`,
     `validateOriginHeader`, `localhostAllowedOrigins`, and
-    `originValidationResponse`. **Use these. Do not hand-roll host or origin
-    validation.**
-  - There is no Node HTTP listener helper. `WebStandardStreamableHTTPServerTransport`
-    and `createMcpHandler` are web-standard. Binding a socket and adapting
-    Node's `req`/`res` to `Request`/`Response` is genuinely SlowMCP's work.
+    `originValidationResponse`, all web-standard. **Use these. Do not hand-roll
+    host or origin validation.**
+  - The client package exports `StdioClientTransport`, and also a `./stdio`
+    subpath. Drive the child process with it.
+  - `McpServerFactory` is `(ctx: McpRequestContext) => McpServer | Server |
+    Promise<...>`. SlowMCP's current factory ignores `ctx`; keep it that way
+    unless a requirement forces otherwise, and report if it does.
+  - **`@modelcontextprotocol/node@2.0.0` exists** and already sits in the
+    lockfile, but only because FastMCP depends on it. It exports
+    `toNodeHandler(handler, opts)`, `toWebRequest(req, ...)`,
+    `NodeStreamableHTTPServerTransport`, and Node-flavored `hostHeaderValidation`,
+    `localhostHostValidation`, `originValidation`, `localhostOriginValidation`.
+    `toNodeHandler` is precisely the Node-to-web adaptation `serveNode` needs.
+    **Read requirement 4 before deciding whether to use it.**
 
 ## Owned paths
 
@@ -75,9 +84,23 @@ packages/slowmcp/types/{index,testing,protocol}.d.ts
 fixtures/**                                     T22
 examples/**                                     T31
 docs/**                                         T32
-packages/slowmcp/package.json                   integration
+scripts/**                                      integration, request through T22
+packages/slowmcp/package.json                   integration, including dependencies
+package.json (root), pnpm-workspace.yaml        integration
 vitest.config.ts                                integration
+packages/slowmcp/test/snapshot-semantics.test.coffee   shared, see below
+packages/slowmcp/test/slice.test.coffee                shared, see below
 ```
+
+**`snapshot-semantics.test.coffee` is integration-owned, not T20's and not
+yours**, even though it is the primary test of your `createHttpHandler`. It
+also covers `app.snapshot()` and `testServer`. Put your transport snapshot
+coverage in new files under `packages/slowmcp/test/transports/`. If a change of
+yours requires editing either shared file, report the exact edit.
+
+The JavaScript child-process fixture your stdio test spawns lives under
+`packages/slowmcp/test/transports/`, which you own. **It does not go in
+`fixtures/`**, which is T22's.
 
 ## Frozen interfaces
 
@@ -101,7 +124,9 @@ vitest.config.ts                                integration
 
 1. `serveStdio(app, options?)` on `slowmcp/stdio`, built on the SDK's stdio
    serving path, returning a handle with a documented `close()`.
-2. Prove, in a real child process running a **packed** server:
+2. Prove, in a real child process running a server built from **the workspace
+   build**, not the packed tarball. The packed-tarball child process is T22's
+   gate-level eval; duplicating it here means two agents own one test. Prove:
    - the process launches;
    - the official `StdioClientTransport` connects;
    - discovery works;
@@ -121,6 +146,17 @@ vitest.config.ts                                integration
 
 4. `serveNode(app, options?)` on `slowmcp/node`, binding a real socket,
    adapting Node request and response objects to the web-standard handler.
+
+   **This carries a dependency decision you must not make alone.** Two routes:
+
+   | Route | Cost |
+   |---|---|
+   | depend on `@modelcontextprotocol/node` and use `toNodeHandler` | adds a runtime dependency plus a `hono` peer and `@hono/node-server`. SlowMCP currently installs 13 top-level entries at 21 MB, and `README.md` publishes that against FastMCP's 122 and 46 MB. This route moves SlowMCP toward FastMCP's footprint and **invalidates a published measurement.** |
+   | adapt `req`/`res` to `Request`/`Response` inside SlowMCP | keeps the footprint, costs maintained adapter code and the edge cases `toNodeHandler` already handles |
+
+   Measure both, report the footprint delta, and **let integration choose.** Do
+   not add the dependency on your branch before that decision. If you adapt by
+   hand, `toWebRequest`'s source is the reference for which edge cases matter.
 5. Safe localhost defaults: loopback host, no wildcard bind without an explicit
    opt-in.
 6. Host and origin validation **using the SDK helpers named above**.

@@ -61,7 +61,15 @@ packages/slowmcp/test/testing/**                new
 fixtures/**
 evals/**                                        new, if justified
 scripts/verify-*.mjs
+VERTICAL_SLICE_FINDINGS.md                      section 6 only
 ```
+
+You own section 6 of `VERTICAL_SLICE_FINDINGS.md` because you add the rows.
+Leave the measurement sections alone; integration restates those.
+
+`packages/slowmcp/package.json` **`devDependencies` only**, if the second
+Standard Schema library is not already there from T20. Coordinate so it is
+added once. Every other field is integration-owned.
 
 Plus, **on integration approval only**, the shared ordering surfaces:
 
@@ -81,8 +89,22 @@ packages/slowmcp/src/protocol/**                integration
 packages/slowmcp/types/{index,http,stdio,node,protocol}.d.ts
 examples/**                                     T31
 docs/**                                         T32
-packages/slowmcp/package.json                   integration
+packages/slowmcp/package.json                   integration, except devDependencies
+package.json (root), pnpm-workspace.yaml        integration
+vitest.config.ts                                integration
+packages/slowmcp/test/slice.test.coffee                shared, see below
+packages/slowmcp/test/snapshot-semantics.test.coffee   shared, see below
 ```
+
+**Both shared test files are integration-owned.** `slice.test.coffee`'s
+`testServer` block covers your harness but sits in a file that also covers the
+registry; `snapshot-semantics.test.coffee` covers all three agents' code. Put
+new harness coverage in `packages/slowmcp/test/testing/`. If your changes break
+either shared file, report the exact edit rather than applying it.
+
+`vitest.config.ts` is integration-owned even though you are the agent most
+likely to need the `slowmcp:coffee` plugin changed. Report the change; do not
+apply it.
 
 ## Frozen interfaces
 
@@ -132,11 +154,14 @@ packages/slowmcp/package.json                   integration
 
 ### Stage 3, unblocks on T21
 
-8. **stdio process eval.** Using T21's transport, at gate level: a packed
-   server in a child process, official Client, discovery, invocation, stdout
-   purity, clean shutdown. Decide separately whether the public harness gains a
-   stdio mode; if a harness mode that does not spawn a process proves less than
-   T21's test already does, say so and do not build it.
+8. **stdio process eval.** Using T21's transport, **from the packed tarball**,
+   at gate level: a child process running an installed consumer server,
+   official Client, discovery, invocation, stdout purity, clean shutdown. T21
+   proves the transport against the workspace build; you prove it survives
+   packing. **Do not reimplement transport logic**, and do not duplicate T21's
+   unit coverage. Decide separately whether the public harness gains a stdio
+   mode; if a harness mode that does not spawn a process proves less than T21's
+   test already does, say so and do not build it.
 9. **Bound Node HTTP eval.** Using `serveNode`: bind, drive with the official
    Client, assert the contract, release the port. This is the gate-level
    evidence that the injected-`fetch` limitation is closed.

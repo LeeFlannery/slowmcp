@@ -61,7 +61,9 @@ change and waits. No agent edits them on its branch.
 |---|---|
 | `packages/slowmcp/src/protocol/compatibility.coffee`, `types/protocol.d.ts` | Changing it changes what SlowMCP claims to support. It must be a visible, deliberate diff, never a side effect of a transport or capability change. |
 | `packages/slowmcp/package.json` `exports`, `files`, `bin` | A new public subpath must land with its declaration, its fixture coverage, and its export-map entry in one step. Uncoordinated edits ship an unexercised subpath. |
-| root `package.json` scripts, `pnpm-workspace.yaml`, `vitest.config.ts` | Workspace-wide. |
+| root `package.json` scripts, `pnpm-workspace.yaml`, `vitest.config.ts` | Workspace-wide. Applies to all three Wave 1 tasks equally. |
+| `packages/slowmcp/test/slice.test.coffee` and `test/snapshot-semantics.test.coffee` | **Multi-subject test files.** `slice.test.coffee` covers the registry (T20) and the harness (T22). `snapshot-semantics.test.coffee` covers `app.snapshot()` (T20), `createHttpHandler` (T21), and `testServer` (T22). No single agent can own either without owning tests for code it cannot change. Write new coverage in your own new files; report a needed edit to these two. |
+| `packages/slowmcp/package.json` `devDependencies` | Narrower than the rest of the manifest: T20 and T22 both need to add the second Standard Schema library. See the carve-out in their specs. |
 | readiness and check ordering: `scripts/phase2-ready.mjs` gate list, `scripts/slowmcp-check.mjs` `ORDER` | Stable snapshot surface. T22 is the only agent that may edit these, on integration approval. Every other agent requests a check through T22. |
 | the public `SlowMcpServer` type in `types/index.d.ts`, where a change affects more than one agent | T20 owns the file, but a shape change that T21, T22, T30, or T31 must follow is an integration decision. |
 | `CLAUDE.md`, `ARCHITECTURE.md`, `README.md` | Integration reconciles these once per wave. |
