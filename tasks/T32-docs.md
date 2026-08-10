@@ -54,9 +54,10 @@ docs/requirements.txt                           new
 scripts/docs-check.mjs                          new
 ```
 
-`docs/bootstrap-2026-08.md` already exists and is linked from `README.md`. Do
-not rewrite it; it is a record of what happened. Decide where it sits in the
-nav and report the decision.
+`docs/bootstrap-2026-08.md` already exists and is linked from `README.md`.
+**Leave it in place and do not rewrite it into a guide.** It is a record of
+what happened, and it belongs in the nav under `Project` as `Bootstrap
+findings`. See requirement 13 for its position.
 
 ## Forbidden paths
 
@@ -109,10 +110,22 @@ docs/
 ├── guides/{tools,resources,prompts,results-errors,http,stdio,node,testing}.md
 ├── shipping/{index,check,package-contract,compatibility}.md
 ├── examples/{index,hello-tool,coffee-shop,framework-parity,remote-http}.md
-├── reference/{index,api,cli,compatibility}.md
+├── reference/{index,api,cli,protocol-compatibility}.md
+├── bootstrap-2026-08.md                        already exists, leave in place
 ├── contributing.md
 └── roadmap.md
 ```
+
+The two compatibility pages are settled and must not be merged:
+
+| Page | Owns |
+|---|---|
+| `shipping/compatibility.md` | consumer and platform compatibility: Node versions, module formats, TypeScript consumers and their declarations, package manager and resolution behavior |
+| `reference/protocol-compatibility.md` | the MCP protocol revision and policy matrix, and negotiation behavior |
+
+`reference/protocol-compatibility.md` is the reference-grade matrix.
+`concepts/protocol-policy.md` explains *why* the policy exists and stays
+narrative. Cross-link them; do not duplicate the matrix into concepts.
 
 Conditional on Wave 1 output: `guides/resources.md`, `guides/prompts.md`,
 `guides/stdio.md`, `guides/node.md`, `examples/coffee-shop.md`,
@@ -263,6 +276,32 @@ Material for MkDocs. At minimum: site name `SlowMCP`, repository link,
 navigation, code highlighting, copy buttons, search, sensible light and dark
 support, GitHub repository integration. Minimal customization.
 
+Navigation order follows the user journey, with `Project` **last and
+low-priority**:
+
+```text
+Home
+Quickstart
+Why SlowMCP
+Why not the official SDK
+SlowMCP vs FastMCP
+Concepts
+Guides
+Shipping
+Examples
+Reference
+Project
+└── Bootstrap findings      docs/bootstrap-2026-08.md
+Contributing
+Roadmap
+```
+
+`Project` exists so `bootstrap-2026-08.md` is reachable and does not trip a
+strict build, not to promote it. It is a record, not part of the primary user
+journey, and nothing in Quickstart or the guides should route a reader into it.
+Linking to it from `why-slowmcp.md` as supporting evidence is correct; making
+it a step in learning SlowMCP is not.
+
 ### 14. Dependency isolation
 
 Pin documentation tooling in `docs/requirements.txt` or another reproducibly
@@ -398,17 +437,21 @@ Stop and report without finishing if:
   reconstruct either; ask.
 - `README.md` and `ARCHITECTURE.md` are integration-owned. If the site and
   either diverge, report it.
-- Two pages named `compatibility.md` exist in the structure, under `shipping/`
-  and `reference/`. Propose the split rather than silently merging them; the
-  likely division is consumer compatibility under shipping and the protocol
-  revision matrix under reference.
+- Both open questions from the first draft of this task are **resolved and not
+  open for reinterpretation**: `bootstrap-2026-08.md` stays where it is, in the
+  nav under `Project`; the compatibility split is
+  `shipping/compatibility.md` for consumer and platform, and
+  `reference/protocol-compatibility.md` for the protocol revision matrix.
 
 ## Report back
 
 1. Every page built, which task's API it documents, and **every page omitted
    because its feature did not ship**.
-2. Where `docs/bootstrap-2026-08.md` landed in the nav.
-3. How the two `compatibility.md` pages were divided.
+2. The final nav, confirming `Project` sits last and that no primary-journey
+   page routes a reader into `Bootstrap findings`.
+3. What landed on `shipping/compatibility.md` versus
+   `reference/protocol-compatibility.md`, and confirmation the protocol matrix
+   is not duplicated into `concepts/protocol-policy.md`.
 4. The export and CLI truthfulness checks: how they work, and the failures you
    observed.
 5. Every number on the site, and the generated file it came from.
