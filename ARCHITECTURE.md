@@ -984,9 +984,21 @@ Fixtures are intentionally minimal and hostile. Examples teach; fixtures attack.
 
 ## 13. Documentation site
 
-Use **Astro + Starlight** and deploy static output through GitHub Actions to GitHub Pages.
+Use **MkDocs** with **Material for MkDocs**. Markdown source, static output,
+deployed through GitHub Actions to GitHub Pages.
 
-Suggested information architecture:
+Corrected on 10 August 2026. This section previously specified Astro +
+Starlight. The documentation system stays boring, static, searchable, and easy
+to maintain: no Astro, no Starlight, no React, no custom documentation
+frontend, no bespoke theme. It should look like a serious open-source developer
+tool, and the joke should come from the writing rather than novelty UI.
+
+Documentation tooling is Python and is pinned separately from the npm package.
+MkDocs and Material must never become dependencies of the published `slowmcp`
+package. The authoritative page structure and copy requirements live in
+`tasks/T32-docs.md`.
+
+Suggested information architecture, superseded in detail by that task file:
 
 ```text
 Home
@@ -1200,7 +1212,7 @@ Primary baselines:
 - Prefect FastMCP TypeScript: https://github.com/PrefectHQ/fastmcp-ts
 - punkpeye FastMCP: https://github.com/punkpeye/fastmcp
 - CoffeeScript: https://coffeescript.org/
-- Astro GitHub Pages guide: https://docs.astro.build/en/guides/deploy/github/
-- Starlight docs: https://starlight.astro.build/
+- MkDocs: https://www.mkdocs.org/
+- Material for MkDocs: https://squidfunk.github.io/mkdocs-material/
 
 The competitive baseline is evidence, not an enemy list. If FastMCP or the official SDK gains a feature that erases SlowMCP's proposed wedge, update the architecture instead of pretending otherwise.

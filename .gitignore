@@ -35,9 +35,10 @@ temp/
 .cache/
 *.tmp
 
-# Astro / docs
-.astro/
-docs/dist/
+# Docs: MkDocs static output and its Python environment
+site/
+docs/.venv/
+.cache/mkdocs/
 
 # TypeScript
 *.tsbuildinfo
