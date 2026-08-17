@@ -31,10 +31,6 @@ export class DefinitionCollection
     @_items.set validated.name, Object.freeze validated
     validated
 
-  has: (name) -> @_items.has name
-
-  size: -> @_items.size
-
   # Insertion order is part of the contract: snapshots must be deterministic.
   values: -> Array.from @_items.values()
 
