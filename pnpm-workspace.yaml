@@ -3,3 +3,7 @@ packages:
   - spikes
   - examples/*
   - fixtures/workspace-consumer
+
+# Transitive patch for the FastMCP baseline spike (qs advisory via express).
+overrides:
+  qs: ">=6.16.0"
