@@ -8,6 +8,7 @@
     "@modelcontextprotocol/client": "2.0.0",
     "@modelcontextprotocol/server": "2.0.0",
     "@prefecthq/fastmcp-ts": "1.4.0",
+    "hono": "4.13.9",
     "zod": "4.4.3"
   }
 }
