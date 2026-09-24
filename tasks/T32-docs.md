@@ -34,7 +34,7 @@ frontend would be the most expensive possible way to undercut that.
 
 ## Read first
 
-- `CLAUDE.md`, in full, especially Brand.
+- `AGENTS.md`, in full, especially Brand.
 - `tasks/README.md`, global invariants.
 - `README.md`, the current voice and structure. The site expands it; it does
   not contradict it.

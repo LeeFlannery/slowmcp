@@ -30,7 +30,7 @@ and it must stay honest whichever way the numbers fall.
 
 ## Read first
 
-- `CLAUDE.md`, in full, especially the benchmark and brand rules.
+- `AGENTS.md`, in full, especially the benchmark and brand rules.
 - `tasks/README.md`, global invariants and frozen interfaces.
 - `ARCHITECTURE.md` §12 in full. Note the divergence rule: where
   implementations differ observably but stay behaviorally equivalent, the

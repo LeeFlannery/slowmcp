@@ -66,7 +66,7 @@ change and waits. No agent edits them on its branch.
 | `packages/slowmcp/package.json` `devDependencies` | Narrower than the rest of the manifest: T20 and T22 both need to add the second Standard Schema library. See the carve-out in their specs. |
 | readiness and check ordering: `scripts/phase2-ready.mjs` gate list, `scripts/slowmcp-check.mjs` `ORDER` | Stable snapshot surface. T22 is the only agent that may edit these, on integration approval. Every other agent requests a check through T22. |
 | the public `SlowMcpServer` type in `types/index.d.ts`, where a change affects more than one agent | T20 owns the file, but a shape change that T21, T22, T30, or T31 must follow is an integration decision. |
-| `CLAUDE.md`, `ARCHITECTURE.md`, `README.md` | Integration reconciles these once per wave. |
+| `AGENTS.md`, `ARCHITECTURE.md`, `README.md` | Integration reconciles these once per wave. |
 
 ## Global invariants
 

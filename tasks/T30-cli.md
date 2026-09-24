@@ -31,7 +31,7 @@ and the scaffolder is where it is easiest to break.
 
 ## Read first
 
-- `CLAUDE.md`, in full, including Brand and the test language policy.
+- `AGENTS.md`, in full, including Brand and the test language policy.
 - `tasks/README.md`, global invariants and frozen interfaces.
 - `ARCHITECTURE.md` §14 in full, §9 containment, §15 correctness rules.
 - `scripts/slowmcp-check.mjs`. Its report format, `--json`, `--quiet`, and exit

@@ -35,7 +35,7 @@ more than a feature from anyone else.
 
 ## Read first
 
-- `CLAUDE.md`, in full, including the test language policy.
+- `AGENTS.md`, in full, including the test language policy.
 - `tasks/README.md`, global invariants and frozen interfaces.
 - `ARCHITECTURE.md` §5 testing API, §7 the three contracts, §10 all layers, §11
   including the contract-to-check mapping and the two stated limits.

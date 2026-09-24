@@ -5,7 +5,7 @@ import coffeescript from 'coffeescript'
 import { defineConfig } from 'vitest/config'
 
 // SlowMCP's own implementation tests are CoffeeScript, because they test
-// CoffeeScript. See CLAUDE.md, "Test language policy".
+// CoffeeScript. See AGENTS.md, "Test language policy".
 //
 // Two hooks are needed, and no more:
 //

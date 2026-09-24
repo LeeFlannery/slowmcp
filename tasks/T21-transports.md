@@ -30,7 +30,7 @@ corrupts the protocol stream.
 
 ## Read first
 
-- `CLAUDE.md`, in full, including the test language policy.
+- `AGENTS.md`, in full, including the test language policy.
 - `tasks/README.md`, global invariants and frozen interfaces.
 - `ARCHITECTURE.md` §5 transport APIs, §10 layers D and E, §11 the two stated
   limits, §15 security and correctness rules.
@@ -177,7 +177,7 @@ Do not build WebSocket or SSE-only transports, auth or bearer-token handling
 supervision, a dev-server watcher (T30), or a transport-selection abstraction
 over the three functions. Do not reimplement what `createMcpHandler` or
 `serveStdio` already do. **If your `serveStdio` is a pure rename of the SDK's,
-report that**: `CLAUDE.md` requires SlowMCP to justify itself beyond renaming
+report that**: `AGENTS.md` requires SlowMCP to justify itself beyond renaming
 official SDK methods.
 
 ## Testing-language policy

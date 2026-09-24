@@ -30,7 +30,7 @@ type contract currently proves inference for exactly one.
 
 ## Read first
 
-- `CLAUDE.md`, in full, including the test language policy.
+- `AGENTS.md`, in full, including the test language policy.
 - `tasks/README.md`, global invariants and frozen interfaces.
 - `ARCHITECTURE.md` §5 (proposed public API), §6 (result helpers), §7
   (definition registry, `buildMcpServer`, the three contracts), §10 agent design
