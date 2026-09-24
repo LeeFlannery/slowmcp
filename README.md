@@ -72,30 +72,6 @@ import { createHttpHandler } from 'slowmcp/http'
 export default createHttpHandler(app)
 ```
 
-## Why not just use the official SDK
-
-Because of what that harness caught.
-
-The first spike passed everything it asserted: right server, right tool, right
-result. It was also speaking 2025-11-25 to a server that fully supported
-2026-07-28, because the official client's negotiation mode defaults to
-`'legacy'`. Nothing errors. Nothing warns. Your tests go green against a
-protocol generation you did not mean to test.
-
-Defending against it by hand does not work unless you already know the shape of
-the problem. The SDK exports `LATEST_PROTOCOL_VERSION` as the *older* revision
-and leaves 2026-07-28 out of `SUPPORTED_PROTOCOL_VERSIONS` entirely, so the
-obvious assertion passes while you sit on the old one.
-
-So `slowmcp/protocol` is the single place SlowMCP states what it speaks,
-`testServer` asserts what was actually negotiated before handing you the
-connection, and a regression test pins the whole thing: default client, same
-handler, lands on the old revision, passes discovery and invocation, gets caught
-by the policy.
-
-That is the wedge. Not renamed SDK methods. Full write-up in
-[`docs/bootstrap-2026-08.md`](docs/bootstrap-2026-08.md).
-
 ## Versus FastMCP
 
 Measured on 9 August 2026, by commands in this repository. Reproduce the first
