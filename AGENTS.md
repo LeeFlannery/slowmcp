@@ -188,5 +188,5 @@ scripts/            build, check, and verification entry points
 
 Spikes use `node --experimental-strip-types` (spike-only convenience, not a
 package constraint). No `.github/workflows` exists yet; `pnpm phase2:ready` is
-the current readiness gate. The declared Node floor `>=20.19.0` is only
-exercised on 26.x.
+the current readiness gate. The published package declares Node `>=20.19.0`;
+the dev toolchain needs `>=22` (vitest 5). Both are only exercised on 26.x.
